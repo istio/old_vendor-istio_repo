@@ -70,8 +70,10 @@ type Cmdable interface {
 	RenameNX(key, newkey string) *BoolCmd
 	Restore(key string, ttl time.Duration, value string) *StatusCmd
 	RestoreReplace(key string, ttl time.Duration, value string) *StatusCmd
-	Sort(key string, sort Sort) *StringSliceCmd
-	SortInterfaces(key string, sort Sort) *SliceCmd
+	Sort(key string, sort *Sort) *StringSliceCmd
+	SortStore(key, store string, sort *Sort) *IntCmd
+	SortInterfaces(key string, sort *Sort) *SliceCmd
+	Touch(keys ...string) *IntCmd
 	TTL(key string) *DurationCmd
 	Type(key string) *StatusCmd
 	Scan(cursor uint64, match string, count int64) *ScanCmd
@@ -252,6 +254,7 @@ type StatefulCmdable interface {
 	Cmdable
 	Auth(password string) *StatusCmd
 	Select(index int) *StatusCmd
+	SwapDB(index1, index2 int) *StatusCmd
 	ClientSetName(name string) *BoolCmd
 	ReadOnly() *StatusCmd
 	ReadWrite() *StatusCmd
@@ -312,6 +315,12 @@ func (c *cmdable) Quit() *StatusCmd {
 
 func (c *statefulCmdable) Select(index int) *StatusCmd {
 	cmd := NewStatusCmd("select", index)
+	c.process(cmd)
+	return cmd
+}
+
+func (c *statefulCmdable) SwapDB(index1, index2 int) *StatusCmd {
+	cmd := NewStatusCmd("swapdb", index1, index2)
 	c.process(cmd)
 	return cmd
 }
@@ -484,11 +493,10 @@ func (c *cmdable) RestoreReplace(key string, ttl time.Duration, value string) *S
 
 type Sort struct {
 	By            string
-	Offset, Count float64
+	Offset, Count int64
 	Get           []string
 	Order         string
-	IsAlpha       bool
-	Store         string
+	Alpha         bool
 }
 
 func (sort *Sort) args(key string) []interface{} {
@@ -505,23 +513,41 @@ func (sort *Sort) args(key string) []interface{} {
 	if sort.Order != "" {
 		args = append(args, sort.Order)
 	}
-	if sort.IsAlpha {
+	if sort.Alpha {
 		args = append(args, "alpha")
-	}
-	if sort.Store != "" {
-		args = append(args, "store", sort.Store)
 	}
 	return args
 }
 
-func (c *cmdable) Sort(key string, sort Sort) *StringSliceCmd {
+func (c *cmdable) Sort(key string, sort *Sort) *StringSliceCmd {
 	cmd := NewStringSliceCmd(sort.args(key)...)
 	c.process(cmd)
 	return cmd
 }
 
-func (c *cmdable) SortInterfaces(key string, sort Sort) *SliceCmd {
+func (c *cmdable) SortStore(key, store string, sort *Sort) *IntCmd {
+	args := sort.args(key)
+	if store != "" {
+		args = append(args, "store", store)
+	}
+	cmd := NewIntCmd(args...)
+	c.process(cmd)
+	return cmd
+}
+
+func (c *cmdable) SortInterfaces(key string, sort *Sort) *SliceCmd {
 	cmd := NewSliceCmd(sort.args(key)...)
+	c.process(cmd)
+	return cmd
+}
+
+func (c *cmdable) Touch(keys ...string) *IntCmd {
+	args := make([]interface{}, len(keys)+1)
+	args[0] = "touch"
+	for i, key := range keys {
+		args[i+1] = key
+	}
+	cmd := NewIntCmd(args...)
 	c.process(cmd)
 	return cmd
 }
