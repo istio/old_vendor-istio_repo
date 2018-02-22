@@ -1,0 +1,13 @@
+# development environment
+.DS_Store
+.vscode
+
+# build artifacts
+coverage
+opa_*
+.Dockerfile_*
+_release
+site.tar.gz
+
+# runtime artifacts
+policies

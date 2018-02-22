@@ -1,0 +1,5 @@
+vendor
+manual_testing
+.idea
+
+sdk/ruby/*.gem
