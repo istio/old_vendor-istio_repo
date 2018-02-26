@@ -1,6 +1,6 @@
 // +build appengine
 
-package util
+package internal
 
 func BytesToString(b []byte) string {
 	return string(b)

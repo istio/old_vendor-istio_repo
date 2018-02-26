@@ -126,8 +126,8 @@
     "private/protocol/xml/xmlutil",
     "service/sts"
   ]
-  revision = "f7f1ee9550cc76ceea731d99c8dbe00a0c39f66d"
-  version = "v1.13.4"
+  revision = "adeb60566bc8c9202b0f1be7e3a675beedbc11f0"
+  version = "v1.13.2"
 
 [[projects]]
   branch = "master"
@@ -281,7 +281,7 @@
   branch = "master"
   name = "github.com/go-openapi/swag"
   packages = ["."]
-  revision = "0d03ad0b6405ada874d59d97c416b5cf4234e154"
+  revision = "84f4bee7c0a6db40e3166044c7983c1c32125429"
 
 [[projects]]
   name = "github.com/go-redis/redis"
@@ -292,11 +292,10 @@
     "internal/hashtag",
     "internal/pool",
     "internal/proto",
-    "internal/singleflight",
-    "internal/util"
+    "internal/singleflight"
   ]
-  revision = "56dea1f39a5f4a64fe8c639464c966c75f226e3e"
-  version = "v6.9.1"
+  revision = "fa7f64f7f27348658ecfa71dd71dfb2d112e2f86"
+  version = "v6.9.0"
 
 [[projects]]
   name = "github.com/gobwas/glob"
@@ -340,10 +339,12 @@
     "protoc-gen-gogo/grpc",
     "protoc-gen-gogo/plugin",
     "protoc-gen-gogoslick",
+    "protoc-min-version",
     "sortkeys",
     "types",
     "vanity",
-    "vanity/command"
+    "vanity/command",
+    "version"
   ]
   revision = "342cbe0a04158f6dcb03ca0079991a51a4248c02"
   version = "v0.5"
@@ -442,7 +443,7 @@
     "openstack/utils",
     "pagination"
   ]
-  revision = "8f1afb16493e82ad2cabafc23843cb128e64ee97"
+  revision = "6c823a6861b8e5dcf93a9a5a6937d592370aacb6"
 
 [[projects]]
   name = "github.com/gorilla/context"
@@ -583,8 +584,8 @@
 [[projects]]
   name = "github.com/json-iterator/go"
   packages = ["."]
-  revision = "0ac74bba4a81211b28e32ef260c0f16ae41f1377"
-  version = "1.1.1"
+  revision = "be70f29b04dea7efb4d82a8989c33aee989b74d1"
+  version = "1.1.0"
 
 [[projects]]
   name = "github.com/juju/ratelimit"
@@ -650,8 +651,7 @@
     "matchers/support/goraph/util",
     "types"
   ]
-  revision = "003f63b7f4cff3fc95357005358af2de0f5fe152"
-  version = "v1.3.0"
+  revision = "ba3724c94e4dd5d5690d37c190f1c54b2c1b4e64"
 
 [[projects]]
   name = "github.com/open-policy-agent/opa"
@@ -860,8 +860,8 @@
     "concurrent",
     "reflect2"
   ]
-  revision = "10fc95fad3224a032229e59f6e7023137d82b526"
-  version = "0.9.1"
+  revision = "571356917fca907b069b7b47a14cd32ba0b340d4"
+  version = "0.9.0"
 
 [[projects]]
   branch = "master"
@@ -910,7 +910,7 @@
     "scrypt",
     "ssh/terminal"
   ]
-  revision = "49796115aa4b964c318aad4f3084fdb41e9aa067"
+  revision = "432090b8f568c018896cd8a0fb0345872bbac6ce"
 
 [[projects]]
   branch = "master"
@@ -955,7 +955,7 @@
     "unix",
     "windows"
   ]
-  revision = "88d2dcc510266da9f7f8c7f34e1940716cab5f5c"
+  revision = "37707fdb30a5b38865cfb95e5aab41707daec7fd"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -1004,7 +1004,7 @@
     "go/ast/astutil",
     "imports"
   ]
-  revision = "2ae76fd1560b622911f444c1e66b70a857e1de67"
+  revision = "f8f2f88271bf2c23f28a09d288d26507a9503c97"
 
 [[projects]]
   branch = "master"
@@ -1126,10 +1126,10 @@
   revision = "59c90c7046f643cbe0d4e7c8776c42a84ce75910"
 
 [[projects]]
+  branch = "v2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
-  revision = "3e6d767784b037b90a14701b6c9f0643f05db963"
-  version = "v2.1.0"
+  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
 
 [[projects]]
   name = "istio.io/api"
@@ -1450,6 +1450,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b7088c9747af431bf2fddaab563f9375f5ab31c7d5a72b7fbaf2f775e452804c"
+  inputs-digest = "741f0e15da19aab9c008ebff9b8699aebfa77767534352122af9cd1a4ebcd158"
   solver-name = "gps-cdcl"
   solver-version = 1
