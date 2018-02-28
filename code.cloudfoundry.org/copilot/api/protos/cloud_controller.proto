@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package api;
+
+message Route {
+  string guid = 1;
+  string host = 2;
+}
+
+message UpsertRouteRequest {
+  Route route = 1;
+}
+
+message UpsertRouteResponse {}
+
+message DeleteRouteRequest {
+  string guid = 1;
+}
+
+message DeleteRouteResponse {}
+
+message CapiProcess {
+  string guid = 1;
+  string diego_process_guid = 2;
+}
+
+message RouteMapping {
+  CapiProcess capi_process = 1;
+  string route_guid = 2;
+}
+
+message MapRouteRequest {
+  RouteMapping route_mapping = 1;
+}
+
+message MapRouteResponse {}
+
+message UnmapRouteRequest {
+  string capi_process_guid = 1;
+  string route_guid = 2;
+}
+
+message UnmapRouteResponse {}
+
+service CloudControllerCopilot {
+  rpc UpsertRoute(UpsertRouteRequest) returns (UpsertRouteResponse) {}
+  rpc DeleteRoute (DeleteRouteRequest) returns (DeleteRouteResponse) {}
+
+  rpc MapRoute (MapRouteRequest) returns (MapRouteResponse) {}
+  rpc UnmapRoute (UnmapRouteRequest) returns (UnmapRouteResponse) {}
+}
