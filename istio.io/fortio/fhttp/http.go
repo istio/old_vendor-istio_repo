@@ -27,6 +27,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -46,6 +47,8 @@ type Fetcher interface {
 	// Fetch returns http code, data, offset of body (for client which returns
 	// headers)
 	Fetch() (int, []byte, int)
+	// Close() cleans up connections and state - must be paired with NewClient calls.
+	Close()
 }
 
 var (
@@ -205,9 +208,26 @@ func newHTTPRequest(o *HTTPOptions) *http.Request {
 // Client object for making repeated requests of the same URL using the same
 // http client (net/http)
 type Client struct {
-	url    string
-	req    *http.Request
-	client *http.Client
+	url       string
+	req       *http.Request
+	client    *http.Client
+	transport *http.Transport
+}
+
+// Close cleans up any resources used by NewStdClient
+func (c *Client) Close() {
+	log.Debugf("Close() on %+v", c)
+	if c.req != nil {
+		if c.req.Body != nil {
+			if err := c.req.Body.Close(); err != nil {
+				log.Warnf("Error closing std client body: %v", err)
+			}
+		}
+		c.req = nil
+	}
+	if c.transport != nil {
+		c.transport.CloseIdleConnections()
+	}
 }
 
 // ChangeURL only for standard client, allows fetching a different URL
@@ -256,7 +276,7 @@ func NewClient(o *HTTPOptions) Fetcher {
 	if o.DisableFastClient {
 		return NewStdClient(o)
 	}
-	return NewBasicClient(o)
+	return NewFastClient(o)
 }
 
 // NewStdClient creates a client object that wraps the net/http standard client.
@@ -297,12 +317,13 @@ func NewStdClient(o *HTTPOptions) *Client {
 				return http.ErrUseLastResponse
 			},
 		},
+		&tr,
 	}
 	return &client
 }
 
-// BasicClient is a fast, lockfree single purpose http 1.0/1.1 client.
-type BasicClient struct {
+// FastClient is a fast, lockfree single purpose http 1.0/1.1 client.
+type FastClient struct {
 	buffer       []byte
 	req          []byte
 	dest         net.TCPAddr
@@ -322,10 +343,21 @@ type BasicClient struct {
 	reqTimeout   time.Duration
 }
 
-// NewBasicClient makes a basic, efficient http 1.0/1.1 client.
+// Close cleans up any resources used by FastClient
+func (c *FastClient) Close() {
+	log.Debugf("Closing %+v", c)
+	if c.socket != nil {
+		if err := c.socket.Close(); err != nil {
+			log.Warnf("Error closing fast client's socket: %v", err)
+		}
+		c.socket = nil
+	}
+}
+
+// NewFastClient makes a basic, efficient http 1.0/1.1 client.
 // This function itself doesn't need to be super efficient as it is created at
 // the beginning and then reused many times.
-func NewBasicClient(o *HTTPOptions) Fetcher {
+func NewFastClient(o *HTTPOptions) Fetcher {
 	proto := "1.1"
 	if o.HTTP10 {
 		proto = "1.0"
@@ -341,7 +373,7 @@ func NewBasicClient(o *HTTPOptions) Fetcher {
 		return nil
 	}
 	// note: Host includes the port
-	bc := BasicClient{url: o.URL, host: url.Host, hostname: url.Hostname(), port: url.Port(),
+	bc := FastClient{url: o.URL, host: url.Host, hostname: url.Hostname(), port: url.Port(),
 		http10: o.HTTP10, halfClose: o.AllowHalfClose}
 	bc.buffer = make([]byte, BufferSizeKb*1024)
 	if bc.port == "" {
@@ -544,12 +576,12 @@ func ParseChunkSize(inp []byte) (int, int) {
 }
 
 // return the result from the state.
-func (c *BasicClient) returnRes() (int, []byte, int) {
+func (c *FastClient) returnRes() (int, []byte, int) {
 	return c.code, c.buffer[:c.size], c.headerLen
 }
 
 // connect to destination.
-func (c *BasicClient) connect() *net.TCPConn {
+func (c *FastClient) connect() *net.TCPConn {
 	socket, err := net.DialTCP("tcp", nil, &c.dest)
 	if err != nil {
 		log.Errf("Unable to connect to %v : %v", c.dest, err)
@@ -569,7 +601,7 @@ func (c *BasicClient) connect() *net.TCPConn {
 }
 
 // Fetch fetches the url content. Returns http code, data, offset of body.
-func (c *BasicClient) Fetch() (int, []byte, int) {
+func (c *FastClient) Fetch() (int, []byte, int) {
 	c.code = -1
 	c.size = 0
 	c.headerLen = 0
@@ -636,7 +668,7 @@ func DebugSummary(buf []byte, max int) string {
 
 // Response reading:
 // TODO: refactor - unwiedly/ugly atm
-func (c *BasicClient) readResponse(conn *net.TCPConn) {
+func (c *FastClient) readResponse(conn *net.TCPConn) {
 	max := len(c.buffer)
 	parsedHeaders := false
 	// TODO: safer to start with -1 and fix ok for http 1.0
@@ -1129,6 +1161,7 @@ func closingServer(listener net.Listener) error {
 // DynamicHTTPServer listens on an available port, sets up an http or https
 // (when secure is true) server on it and returns the listening port and
 // mux to which one can attach handlers to.
+// TODO: merge/refactor/share with Serve()
 func DynamicHTTPServer(secure bool) (int, *http.ServeMux) {
 	m := http.NewServeMux()
 	s := &http.Server{
@@ -1232,11 +1265,18 @@ func DebugHandler(w http.ResponseWriter, r *http.Request) {
 	// Host is removed from headers map and put here (!)
 	buf.WriteString("Host: ")
 	buf.WriteString(r.Host)
-	for name, headers := range r.Header {
+
+	var keys []string
+	for k := range r.Header {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, name := range keys {
 		buf.WriteByte('\n')
 		buf.WriteString(name)
 		buf.WriteString(": ")
 		first := true
+		headers := r.Header[name]
 		for _, h := range headers {
 			if !first {
 				buf.WriteByte(',')
@@ -1268,17 +1308,26 @@ func DebugHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // Serve starts a debug / echo http server on the given port.
-// TODO: make it work for port 0 and return the port found and also
-// add a non blocking mode that makes sure the socket exists before returning
-func Serve(port, debugPath string) {
+// Returns the addr where the listening socket is bound.
+// The .Port can be retrieved from it when requesting the 0 port as
+// input for dynamic http server.
+func Serve(port, debugPath string) *net.TCPAddr {
 	startTime = time.Now()
 	nPort := fnet.NormalizePort(port)
-	fmt.Printf("Fortio %s echo server listening on port %s\n", version.Short(), nPort)
-	if debugPath != "" {
-		http.HandleFunc(debugPath, DebugHandler)
+	listener, err := net.Listen("tcp", nPort)
+	if err != nil {
+		log.Fatalf("Error occurred while listening %v: %v", nPort, err)
 	}
-	http.HandleFunc("/", EchoHandler)
-	if err := http.ListenAndServe(nPort, nil); err != nil {
-		fmt.Println("Error starting server", err)
-	}
+	addr := listener.Addr().(*net.TCPAddr)
+	fmt.Printf("Fortio %s echo server listening on %s\n", version.Short(), addr.String())
+	go func() {
+		if debugPath != "" {
+			http.HandleFunc(debugPath, DebugHandler)
+		}
+		http.HandleFunc("/", EchoHandler)
+		if err := http.Serve(listener, nil); err != nil {
+			fmt.Println("Error starting server", err)
+		}
+	}()
+	return addr
 }
