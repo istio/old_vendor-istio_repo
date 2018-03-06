@@ -61,9 +61,10 @@ func Dial(serverAddr string, tls bool) (conn *grpc.ClientConn, err error) {
 // Also is the internal type used per thread/goroutine.
 type GRPCRunnerResults struct {
 	periodic.RunnerResults
-	client   grpc_health_v1.HealthClient
-	req      grpc_health_v1.HealthCheckRequest
-	RetCodes map[grpc_health_v1.HealthCheckResponse_ServingStatus]int64
+	client      grpc_health_v1.HealthClient
+	req         grpc_health_v1.HealthCheckRequest
+	RetCodes    map[grpc_health_v1.HealthCheckResponse_ServingStatus]int64
+	Destination string
 }
 
 // Run exercises GRPC health check at the target QPS.
@@ -96,10 +97,11 @@ func RunGRPCTest(o *GRPCRunnerOptions) (*GRPCRunnerResults, error) {
 	defer r.Options().Abort()
 	numThreads := r.Options().NumThreads
 	total := GRPCRunnerResults{
-		RetCodes: make(map[grpc_health_v1.HealthCheckResponse_ServingStatus]int64),
+		RetCodes:    make(map[grpc_health_v1.HealthCheckResponse_ServingStatus]int64),
+		Destination: o.Destination,
 	}
 	grpcstate := make([]GRPCRunnerResults, numThreads)
-
+	out := r.Options().Out // Important as the default value is set from nil to stdout inside NewPeriodicRunner
 	for i := 0; i < numThreads; i++ {
 		r.Options().Runners[i] = &grpcstate[i]
 		conn, err := Dial(o.Destination, o.Secure)
@@ -157,7 +159,7 @@ func RunGRPCTest(o *GRPCRunnerOptions) (*GRPCRunnerResults, error) {
 		}
 	}
 	for _, k := range keys {
-		fmt.Printf("Health %s : %d\n", k.String(), total.RetCodes[k])
+		fmt.Fprintf(out, "Health %s : %d\n", k.String(), total.RetCodes[k])
 	}
 	return &total, nil
 }
