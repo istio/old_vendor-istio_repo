@@ -24,6 +24,15 @@
   revision = "ac2922c9b5cfb46d70befdc91612343e6e382811"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/Azure/go-ansiterm"
+  packages = [
+    ".",
+    "winterm"
+  ]
+  revision = "d6e3b3328b783f23731bc4d058875b0371ff8109"
+
+[[projects]]
   name = "github.com/Azure/go-autorest"
   packages = [
     "autorest",
@@ -57,6 +66,18 @@
   packages = ["."]
   revision = "b217b9c388de2cacde4354c536e520c52c055563"
   version = "v2.14.1"
+
+[[projects]]
+  name = "github.com/Microsoft/go-winio"
+  packages = ["."]
+  revision = "7da180ee92d8bd8bb8c37fc560e673e6557c392f"
+  version = "v0.4.7"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/Nvveen/Gotty"
+  packages = ["."]
+  revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
 
 [[projects]]
   name = "github.com/PuerkitoBio/purell"
@@ -160,6 +181,12 @@
   version = "v3.1.1"
 
 [[projects]]
+  name = "github.com/cenkalti/backoff"
+  packages = ["."]
+  revision = "61153c768f31ee5f130071d08fc82b85208528de"
+  version = "v1.1.0"
+
+[[projects]]
   name = "github.com/circonus-labs/circonus-gometrics"
   packages = [
     ".",
@@ -181,6 +208,12 @@
   name = "github.com/codahale/hdrhistogram"
   packages = ["."]
   revision = "3a0bb77429bd3a61596f5e8a3172445844342120"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/containerd/continuity"
+  packages = ["pathdriver"]
+  revision = "d8fb8589b0e8e85b8c8bbaa8840226d0dfeb7371"
 
 [[projects]]
   branch = "v2"
@@ -220,6 +253,50 @@
     "reference"
   ]
   revision = "6fca8d6e6713acbdf3f9ca40cf6370fc5ee5ee53"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/docker/docker"
+  packages = [
+    "api/types",
+    "api/types/blkiodev",
+    "api/types/container",
+    "api/types/filters",
+    "api/types/mount",
+    "api/types/network",
+    "api/types/registry",
+    "api/types/strslice",
+    "api/types/swarm",
+    "api/types/swarm/runtime",
+    "api/types/versions",
+    "opts",
+    "pkg/archive",
+    "pkg/fileutils",
+    "pkg/homedir",
+    "pkg/idtools",
+    "pkg/ioutils",
+    "pkg/jsonmessage",
+    "pkg/longpath",
+    "pkg/mount",
+    "pkg/pools",
+    "pkg/stdcopy",
+    "pkg/system",
+    "pkg/term",
+    "pkg/term/windows"
+  ]
+  revision = "ae7016427f8cba4e4d8fcb979d6ba313ee2c0702"
+
+[[projects]]
+  name = "github.com/docker/go-connections"
+  packages = ["nat"]
+  revision = "3ede32e2033de7505e6500d6c868c2b9ed9f169d"
+  version = "v0.3.0"
+
+[[projects]]
+  name = "github.com/docker/go-units"
+  packages = ["."]
+  revision = "0dadbb0345b35ec7ef35e228dabb8de89a65bf52"
+  version = "v0.3.2"
 
 [[projects]]
   branch = "master"
@@ -269,6 +346,12 @@
   packages = ["fluent"]
   revision = "8bbc2356beaf021b04c9bd5cdc76ea5a7ccb40ec"
   version = "v1.3.0"
+
+[[projects]]
+  name = "github.com/fsouza/go-dockerclient"
+  packages = ["."]
+  revision = "ca33ff277b527ce11b793e62f9ba244129b01caf"
+  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/garyburd/redigo"
@@ -722,6 +805,24 @@
   version = "v1.0.0-rc1"
 
 [[projects]]
+  name = "github.com/opencontainers/image-spec"
+  packages = [
+    "specs-go",
+    "specs-go/v1"
+  ]
+  revision = "d60099175f88c47cd379c4738d158884749ed235"
+  version = "v1.0.1"
+
+[[projects]]
+  name = "github.com/opencontainers/runc"
+  packages = [
+    "libcontainer/system",
+    "libcontainer/user"
+  ]
+  revision = "baf6536d6259209c3edfa2b22237af82942d3dfa"
+  version = "v0.1.1"
+
+[[projects]]
   name = "github.com/openshift/api"
   packages = ["apps/v1"]
   revision = "0d921e363e951d89f583292c60d013c318df64dc"
@@ -1162,6 +1263,12 @@
   version = "v0.9.0"
 
 [[projects]]
+  name = "gopkg.in/ory-am/dockertest.v3"
+  packages = ["."]
+  revision = "15c8e8835bba04e0d7c2b57958ffe294d5e643dc"
+  version = "v3.1.6"
+
+[[projects]]
   name = "gopkg.in/russross/blackfriday.v2"
   packages = ["."]
   revision = "cadec560ec52d93835bf2f15bd794700d3a2473b"
@@ -1508,6 +1615,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "ab70c4a873b314fd5314f27756155b572ca0852859bb6e78517e2de6f6b1ab68"
+  inputs-digest = "42c72517ceec63d094f7278fb2752108d29622b763f6b60d21b7fa7919dcb470"
   solver-name = "gps-cdcl"
   solver-version = 1
