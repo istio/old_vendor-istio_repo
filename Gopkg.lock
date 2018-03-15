@@ -1232,12 +1232,6 @@
   revision = "latest_release"
 
 [[projects]]
-  branch = "master"
-  name = "istio.io/gogo-genproto"
-  packages = ["googleapis/google/rpc"]
-  revision = "dd2b5b6a8f1400838165245e704a011a30154a44"
-
-[[projects]]
   branch = "release-1.9"
   name = "k8s.io/api"
   packages = [
@@ -1516,6 +1510,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "fc47b97de06a243a4a66ffdc292a1c5844fa373084fbf4eacf957d4cb972fbfd"
+  inputs-digest = "9836695268a1e37d3296da37d8387b233589968270d3b178fccfc4850b238c0b"
   solver-name = "gps-cdcl"
   solver-version = 1
