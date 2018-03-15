@@ -179,14 +179,14 @@ type DestinationRule struct {
 	// the FQDN of the host would be derived based on the underlying
 	// platform.
 	//
-	// For example on Kubernetes, when hosts contains a short name, Istio
-	// will interpret the short name based on the namespace of the client
-	// where rules are being applied. Thus, when a client in the "default"
-	// namespace applies a rule containing a name "reviews", Istio will setup
-	// routes to the "reviews.default.svc.cluster.local" service. However, if
-	// a different name such as "reviews.sales" is used, it would be treated
-	// as a FQDN during virtual host matching.  In Consul, a plain service
-	// name would be resolved to the FQDN "reviews.service.consul".
+	// For example on Kubernetes, when hosts contains a short name, Istio will
+	// interpret the short name based on the namespace of the rule.  Thus, when a
+	// client applies a rule in the "default" namespace, containing a name
+	// "reviews", Istio will setup routes to the
+	// "reviews.default.svc.cluster.local" service. However, if a different name
+	// such as "reviews.sales" is used, it would be treated as a FQDN during
+	// virtual host matching.  In Consul, a plain service name would be resolved to
+	// the FQDN "reviews.service.consul".
 	//
 	// Note that the hosts field applies to both HTTP and TCP
 	// services. Service inside the mesh, i.e. those found in the service
@@ -388,7 +388,9 @@ func (m *LoadBalancerSettings) String() string            { return proto.Compact
 func (*LoadBalancerSettings) ProtoMessage()               {}
 func (*LoadBalancerSettings) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
 
-type isLoadBalancerSettings_LbPolicy interface{ isLoadBalancerSettings_LbPolicy() }
+type isLoadBalancerSettings_LbPolicy interface {
+	isLoadBalancerSettings_LbPolicy()
+}
 
 type LoadBalancerSettings_Simple struct {
 	Simple LoadBalancerSettings_SimpleLB `protobuf:"varint,1,opt,name=simple,enum=istio.networking.v1alpha3.LoadBalancerSettings_SimpleLB,oneof"`
@@ -544,8 +546,7 @@ func (m *LoadBalancerSettings_ConsistentHashLB) GetMinimumRingSize() uint32 {
 //     metadata:
 //       name: bookinfo-redis
 //     spec:
-//       destination:
-//         name: myredissrv
+//       name: myredissrv
 //       trafficPolicy:
 //         connectionPool:
 //           tcp:
@@ -676,8 +677,7 @@ func (m *ConnectionPoolSettings_HTTPSettings) GetMaxRetries() int32 {
 //     metadata:
 //       name: reviews-cb-policy
 //     spec:
-//       destination:
-//         name: reviews
+//       name: reviews
 //       trafficPolicy:
 //         connectionPool:
 //           tcp:
@@ -774,13 +774,13 @@ func (m *OutlierDetection_HTTPSettings) GetMaxEjectionPercent() int32 {
 //     metadata:
 //       name: db-mtls
 //     spec:
-//       destination:
-//         name: mydbserver
-//       tls:
-//         mode: MUTUAL
-//         clientCertificate: /etc/certs/myclientcert.pem
-//         privateKey: /etc/certs/client_private_key.pem
-//         caCertificates: /etc/certs/rootcacerts.pem
+//       name: mydbserver
+//       trafficPolicy:
+//         tls:
+//           mode: MUTUAL
+//           clientCertificate: /etc/certs/myclientcert.pem
+//           privateKey: /etc/certs/client_private_key.pem
+//           caCertificates: /etc/certs/rootcacerts.pem
 //
 // The following rule configures a client to use TLS when talking to a foreign service whose domain matches *.foo.com.
 //
@@ -789,10 +789,10 @@ func (m *OutlierDetection_HTTPSettings) GetMaxEjectionPercent() int32 {
 //     metadata:
 //       name: tls-foo
 //     spec:
-//       destination:
-//         name: *.foo.com
-//       tls:
-//         mode: SIMPLE
+//       name: *.foo.com
+//       trafficPolicy:
+//         tls:
+//           mode: SIMPLE
 //
 type TLSSettings struct {
 	// REQUIRED: Indicates whether connections to this port should be secured
