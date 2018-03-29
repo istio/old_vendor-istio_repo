@@ -132,6 +132,7 @@
     "aws/session",
     "aws/signer/v4",
     "awstesting/unit",
+    "internal/sdkio",
     "internal/sdkrand",
     "internal/shareddefaults",
     "private/protocol",
@@ -139,10 +140,12 @@
     "private/protocol/query/queryutil",
     "private/protocol/rest",
     "private/protocol/xml/xmlutil",
+    "service/cloudwatch",
+    "service/cloudwatch/cloudwatchiface",
     "service/sts"
   ]
-  revision = "9a79087b1148376f4dd860c188c948479e2def3b"
-  version = "v1.13.7"
+  revision = "bb206ce0d6a50da7807694a823aed5c601c57ce0"
+  version = "v1.13.23"
 
 [[projects]]
   branch = "master"
@@ -1519,6 +1522,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1202ceb12906b81e13742fb6b417387f0797c64037f7e8570b06af46f39c355f"
+  inputs-digest = "170f485abf906440ff50e4ded90d230d81337108d32bf0bc7f27376ab763be85"
   solver-name = "gps-cdcl"
   solver-version = 1
