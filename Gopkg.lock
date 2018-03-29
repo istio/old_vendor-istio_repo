@@ -255,22 +255,27 @@
     "envoy/api/v2/core",
     "envoy/api/v2/endpoint",
     "envoy/api/v2/listener",
+    "envoy/api/v2/ratelimit",
     "envoy/api/v2/route",
+    "envoy/config/accesslog/v2",
     "envoy/config/filter/accesslog/v2",
     "envoy/config/filter/fault/v2",
-    "envoy/config/filter/http/fault/v2",
     "envoy/config/filter/network/http_connection_manager/v2",
-    "envoy/config/filter/network/mongo_proxy/v2",
-    "envoy/config/filter/network/redis_proxy/v2",
     "envoy/config/filter/network/tcp_proxy/v2",
+    "envoy/config/metrics/v2",
+    "envoy/config/ratelimit/v2",
+    "envoy/config/trace/v2",
+    "envoy/service/accesslog/v2",
     "envoy/service/discovery/v2",
     "envoy/type",
     "pkg/cache",
     "pkg/log",
     "pkg/server",
+    "pkg/test",
+    "pkg/test/resource",
     "pkg/util"
   ]
-  revision = "aa344ee5f4fff239fadab634413ca6764025511c"
+  revision = "9fdf4bd79736a87c78b3d48b7baa84ea24be1c1a"
 
 [[projects]]
   name = "github.com/fluent/fluent-logger-golang"
