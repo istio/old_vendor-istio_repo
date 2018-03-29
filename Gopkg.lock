@@ -132,6 +132,7 @@
     "aws/session",
     "aws/signer/v4",
     "awstesting/unit",
+    "internal/sdkio",
     "internal/sdkrand",
     "internal/shareddefaults",
     "private/protocol",
@@ -139,10 +140,12 @@
     "private/protocol/query/queryutil",
     "private/protocol/rest",
     "private/protocol/xml/xmlutil",
+    "service/cloudwatch",
+    "service/cloudwatch/cloudwatchiface",
     "service/sts"
   ]
-  revision = "9a79087b1148376f4dd860c188c948479e2def3b"
-  version = "v1.13.7"
+  revision = "bb206ce0d6a50da7807694a823aed5c601c57ce0"
+  version = "v1.13.23"
 
 [[projects]]
   branch = "master"
@@ -258,10 +261,8 @@
     "envoy/api/v2/route",
     "envoy/config/filter/accesslog/v2",
     "envoy/config/filter/fault/v2",
-    "envoy/config/filter/http/fault/v2",
     "envoy/config/filter/network/http_connection_manager/v2",
     "envoy/config/filter/network/mongo_proxy/v2",
-    "envoy/config/filter/network/redis_proxy/v2",
     "envoy/config/filter/network/tcp_proxy/v2",
     "envoy/service/discovery/v2",
     "envoy/type",
@@ -1519,6 +1520,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "1202ceb12906b81e13742fb6b417387f0797c64037f7e8570b06af46f39c355f"
+  inputs-digest = "f4ba124d142aaad38a892ec5830a480c6a2c6b76467ccf759c40e810ed41f415"
   solver-name = "gps-cdcl"
   solver-version = 1
