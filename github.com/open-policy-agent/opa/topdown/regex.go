@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"sync"
 
+	"github.com/yashtewari/glob-intersection"
+
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/topdown/builtins"
 )
@@ -28,10 +30,7 @@ func builtinRegexMatch(a, b ast.Value) (ast.Value, error) {
 	if err != nil {
 		return nil, err
 	}
-	if re.Match([]byte(s2)) {
-		return ast.Boolean(true), nil
-	}
-	return nil, BuiltinEmpty{}
+	return ast.Boolean(re.Match([]byte(s2))), nil
 }
 
 func getRegexp(pat string) (*regexp.Regexp, error) {
@@ -49,7 +48,24 @@ func getRegexp(pat string) (*regexp.Regexp, error) {
 	return re, nil
 }
 
+func builtinGlobsMatch(a, b ast.Value) (ast.Value, error) {
+	s1, err := builtins.StringOperand(a, 1)
+	if err != nil {
+		return nil, err
+	}
+	s2, err := builtins.StringOperand(b, 2)
+	if err != nil {
+		return nil, err
+	}
+	ne, err := gintersect.NonEmpty(string(s1), string(s2))
+	if err != nil {
+		return nil, err
+	}
+	return ast.Boolean(ne), nil
+}
+
 func init() {
 	regexpCache = map[string]*regexp.Regexp{}
 	RegisterFunctionalBuiltin2(ast.RegexMatch.Name, builtinRegexMatch)
+	RegisterFunctionalBuiltin2(ast.GlobsMatch.Name, builtinGlobsMatch)
 }

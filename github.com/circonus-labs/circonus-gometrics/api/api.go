@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -240,7 +241,7 @@ func (a *API) apiRequest(reqMethod string, reqPath string, data []byte) ([]byte,
 			if !a.useExponentialBackoff {
 				break
 			}
-			if strings.Contains(err.Error(), "code 403") {
+			if matched, _ := regexp.MatchString("code 403", err.Error()); matched {
 				break
 			}
 		}

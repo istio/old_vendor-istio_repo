@@ -179,18 +179,17 @@ func Transform(t Transformer, x interface{}) (interface{}, error) {
 		}
 		return y, nil
 	case Object:
-		for i, elem := range y {
-			k, err := transformTerm(t, elem[0])
+		return y.Map(func(k, v *Term) (*Term, *Term, error) {
+			k, err := transformTerm(t, k)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			v, err := transformTerm(t, elem[1])
+			v, err = transformTerm(t, v)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
-			y[i] = Item(k, v)
-		}
-		return y, nil
+			return k, v, nil
+		})
 	case Array:
 		for i := range y {
 			if y[i], err = transformTerm(t, y[i]); err != nil {
@@ -198,7 +197,7 @@ func Transform(t Transformer, x interface{}) (interface{}, error) {
 			}
 		}
 		return y, nil
-	case *Set:
+	case Set:
 		y, err = y.Map(func(term *Term) (*Term, error) {
 			return transformTerm(t, term)
 		})
@@ -233,6 +232,13 @@ func Transform(t Transformer, x interface{}) (interface{}, error) {
 			return nil, err
 		}
 		return y, nil
+	case Call:
+		for i := range y {
+			if y[i], err = transformTerm(t, y[i]); err != nil {
+				return nil, err
+			}
+		}
+		return y, nil
 	default:
 		return y, nil
 	}
@@ -243,6 +249,17 @@ func TransformRefs(x interface{}, f func(Ref) (Value, error)) (interface{}, erro
 	t := &GenericTransformer{func(x interface{}) (interface{}, error) {
 		if r, ok := x.(Ref); ok {
 			return f(r)
+		}
+		return x, nil
+	}}
+	return Transform(t, x)
+}
+
+// TransformVars calls the function f on all vars under x.
+func TransformVars(x interface{}, f func(Var) (Value, error)) (interface{}, error) {
+	t := &GenericTransformer{func(x interface{}) (interface{}, error) {
+		if v, ok := x.(Var); ok {
+			return f(v)
 		}
 		return x, nil
 	}}

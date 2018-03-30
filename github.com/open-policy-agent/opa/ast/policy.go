@@ -6,11 +6,19 @@ package ast
 
 import (
 	"fmt"
+	"math/rand"
 	"strings"
+	"time"
 
-	"github.com/open-policy-agent/opa/types"
 	"github.com/open-policy-agent/opa/util"
 )
+
+// Initialize seed for term hashing. This is intentionally placed before the
+// root document sets are constructed to ensure they use the same hash seed as
+// subsequent lookups. If the hash seeds are out of sync, lookups will fail.
+var hashSeed = rand.New(rand.NewSource(time.Now().UnixNano()))
+var hashSeed0 = (uint64(hashSeed.Uint32()) << 32) | uint64(hashSeed.Uint32())
+var hashSeed1 = (uint64(hashSeed.Uint32()) << 32) | uint64(hashSeed.Uint32())
 
 // DefaultRootDocument is the default root document.
 //
@@ -23,10 +31,10 @@ var InputRootDocument = VarTerm("input")
 
 // RootDocumentNames contains the names of top-level documents that can be
 // referred to in modules and queries.
-var RootDocumentNames = &Set{
+var RootDocumentNames = NewSet(
 	DefaultRootDocument,
 	InputRootDocument,
-}
+)
 
 // DefaultRootRef is a reference to the root of the default document.
 //
@@ -40,10 +48,10 @@ var InputRootRef = Ref{InputRootDocument}
 
 // RootDocumentRefs contains the prefixes of top-level documents that all
 // non-local references start with.
-var RootDocumentRefs = &Set{
+var RootDocumentRefs = NewSet(
 	NewTerm(DefaultRootRef),
 	NewTerm(InputRootRef),
-}
+)
 
 // SystemDocumentKey is the name of the top-level key that identifies the system
 // document.
@@ -166,7 +174,6 @@ type (
 		Negated   bool        `json:"negated,omitempty"`
 		Terms     interface{} `json:"terms"`
 		With      []*With     `json:"with,omitempty"`
-		Infix     bool        `json:"infix,omitempty"`
 	}
 
 	// With represents a modifier on an expression.
@@ -307,11 +314,11 @@ func IsValidImportPath(v Value) (err error) {
 		}
 		for _, e := range v[1:] {
 			if _, ok := e.Value.(String); !ok {
-				return fmt.Errorf("invalid path %v: path elements must be %vs", v, StringTypeName)
+				return fmt.Errorf("invalid path %v: path elements must be strings", v)
 			}
 		}
 	default:
-		return fmt.Errorf("invalid path %v: path must be %v or %v", v, RefTypeName, VarTypeName)
+		return fmt.Errorf("invalid path %v: path must be ref or var", v)
 	}
 	return nil
 }
@@ -617,6 +624,13 @@ func (body *Body) Append(expr *Expr) {
 	*body = append(*body, expr)
 }
 
+// Set sets the expr in the body at the specified position and updates the
+// expr's index accordingly.
+func (body Body) Set(expr *Expr, pos int) {
+	body[pos] = expr
+	expr.Index = pos
+}
+
 // Compare returns an integer indicating whether body is less than, equal to,
 // or greater than other.
 //
@@ -686,16 +700,6 @@ func (body Body) IsGround() bool {
 // Loc returns the location of the Body in the definition.
 func (body Body) Loc() *Location {
 	return body[0].Location
-}
-
-// OutputVars returns a VarSet containing the variables that would be bound by evaluating
-// the body.
-func (body Body) OutputVars(safe VarSet) VarSet {
-	o := safe.Copy()
-	for _, e := range body {
-		o.Update(e.OutputVars(o))
-	}
-	return o.Diff(safe)
 }
 
 func (body Body) String() string {
@@ -860,6 +864,15 @@ func (expr *Expr) IsEquality() bool {
 	return terms[0].Value.Compare(Equality.Ref()) == 0
 }
 
+// IsAssignment returns true if this an assignment expression.
+func (expr *Expr) IsAssignment() bool {
+	terms, ok := expr.Terms.([]*Term)
+	if !ok {
+		return false
+	}
+	return terms[0].Value.Compare(Assign.Ref()) == 0
+}
+
 // IsCall returns true if this expression calls a function.
 func (expr *Expr) IsCall() bool {
 	_, ok := expr.Terms.([]*Term)
@@ -914,33 +927,11 @@ func (expr *Expr) IsGround() bool {
 	return true
 }
 
-// OutputVars returns a VarSet containing variables that would be bound by evaluating
-// this expression.
-func (expr *Expr) OutputVars(safe VarSet) VarSet {
-	if !expr.Negated {
-
-		// Currently the with modifier does not produce any outputs. Any
-		// variables in the value must be safe before the expression can be
-		// evaluated.
-		if !expr.withModifierSafe(safe) {
-			return VarSet{}
-		}
-
-		switch terms := expr.Terms.(type) {
-		case *Term:
-			return expr.outputVarsRefs(safe)
-		case []*Term:
-			name := terms[0].String()
-			if b := BuiltinMap[name]; b != nil {
-				if b.Name == Equality.Name {
-					return expr.outputVarsEquality(safe)
-				}
-				return expr.outputVarsBuiltins(b, safe)
-			}
-			return expr.outputVarsFunc(safe, terms)
-		}
-	}
-	return VarSet{}
+// SetOperator sets the expr's operator and returns the expr itself. If expr is
+// not a call expr, this function will panic.
+func (expr *Expr) SetOperator(term *Term) *Expr {
+	expr.Terms.([]*Term)[0] = term
+	return expr
 }
 
 // SetLocation sets the expr's location and returns the expr itself.
@@ -956,27 +947,11 @@ func (expr *Expr) String() string {
 	}
 	switch t := expr.Terms.(type) {
 	case []*Term:
-		name := t[0].String()
-		bi := BuiltinMap[name]
-		var s string
-		// Handle infix operators (e.g., =, !=, >=, +, /, etc.)
-		if bi != nil && bi.Infix != "" {
-			if types.Compare(bi.Decl.Result(), types.T) == 0 {
-				s = fmt.Sprintf("%v %v %v", t[1], bi.Infix, t[2])
-			} else {
-				s = fmt.Sprintf("%v = %v %v %v", t[3], t[1], bi.Infix, t[2])
-			}
+		if expr.IsEquality() {
+			buf = append(buf, fmt.Sprintf("%v %v %v", t[1], Equality.Infix, t[2]))
+		} else {
+			buf = append(buf, Call(t).String())
 		}
-		// Handle infix call expressions.
-		if len(s) == 0 && expr.Infix {
-			s = fmt.Sprintf("%v = %v%v", t[len(t)-1], t[0], Args(t[1:len(t)-1]))
-		}
-		// Handle anything else.
-		if len(s) == 0 {
-			s = fmt.Sprintf("%v%v", t[0], Args(t[1:]))
-		}
-		buf = append(buf, s)
-
 	case *Term:
 		buf = append(buf, t.String())
 	}
@@ -1003,120 +978,6 @@ func (expr *Expr) Vars(params VarVisitorParams) VarSet {
 	vis := NewVarVisitor().WithParams(params)
 	Walk(vis, expr)
 	return vis.Vars()
-}
-
-func (expr *Expr) outputVarsBuiltins(b *Builtin, safe VarSet) VarSet {
-
-	o := expr.outputVarsRefs(safe)
-	terms := expr.Terms.([]*Term)
-
-	// Check that all input terms are ground or safe.
-	for i, t := range terms[1:] {
-		if b.IsTargetPos(i) {
-			continue
-		}
-		if t.Value.IsGround() {
-			continue
-		}
-		vis := NewVarVisitor().WithParams(VarVisitorParams{
-			SkipClosures:   true,
-			SkipObjectKeys: true,
-			SkipRefHead:    true,
-		})
-		Walk(vis, t)
-		unsafe := vis.Vars().Diff(o).Diff(safe)
-		if len(unsafe) > 0 {
-			return VarSet{}
-		}
-	}
-
-	// Add vars in target positions to result.
-	for i, t := range terms[1:] {
-		if b.IsTargetPos(i) {
-			vis := NewVarVisitor().WithParams(VarVisitorParams{
-				SkipRefHead:    true,
-				SkipSets:       true,
-				SkipObjectKeys: true,
-				SkipClosures:   true,
-			})
-			Walk(vis, t)
-			o.Update(vis.vars)
-		}
-	}
-
-	return o
-}
-
-func (expr *Expr) outputVarsEquality(safe VarSet) VarSet {
-	ts := expr.Terms.([]*Term)
-	o := expr.outputVarsRefs(safe)
-	o.Update(safe)
-	o.Update(Unify(o, ts[1], ts[2]))
-	return o.Diff(safe)
-}
-
-func (expr *Expr) outputVarsFunc(safe VarSet, terms []*Term) VarSet {
-
-	// Functions called with 0 or 1 args cannot produce output vars.
-	if len(expr.Operands()) < 2 {
-		return VarSet{}
-	}
-
-	o := expr.outputVarsRefs(safe)
-
-	// Find unsafe input vars.
-	args := Args(terms[:len(terms)-1])
-	vis := NewVarVisitor().WithParams(VarVisitorParams{
-		SkipClosures:   true,
-		SkipObjectKeys: true,
-		SkipRefHead:    true,
-	})
-	Walk(vis, args)
-	unsafe := vis.Vars().Diff(o).Diff(safe)
-	if len(unsafe) > 0 {
-		return VarSet{}
-	}
-
-	// Find safe output vars.
-	vis = NewVarVisitor().WithParams(VarVisitorParams{
-		SkipRefHead:    true,
-		SkipSets:       true,
-		SkipObjectKeys: true,
-		SkipClosures:   true,
-	})
-	Walk(vis, terms[len(terms)-1])
-	o.Update(vis.vars)
-
-	return o
-}
-
-func (expr *Expr) outputVarsRefs(safe VarSet) VarSet {
-	o := VarSet{}
-	WalkRefs(expr, func(r Ref) bool {
-		if safe.Contains(r[0].Value.(Var)) {
-			o.Update(r.OutputVars())
-			return false
-		}
-		return true
-	})
-	return o
-}
-
-func (expr *Expr) withModifierSafe(safe VarSet) bool {
-	for _, with := range expr.With {
-		unsafe := false
-		WalkVars(with, func(v Var) bool {
-			if !safe.Contains(v) {
-				unsafe = true
-				return true
-			}
-			return false
-		})
-		if unsafe {
-			return false
-		}
-	}
-	return true
 }
 
 // NewBuiltinExpr creates a new Expr object with the supplied terms.
@@ -1162,6 +1023,12 @@ func (w *With) Copy() *With {
 // Hash returns the hash code of the With.
 func (w With) Hash() int {
 	return w.Target.Hash() + w.Value.Hash()
+}
+
+// SetLocation sets the location on w.
+func (w *With) SetLocation(loc *Location) *With {
+	w.Location = loc
+	return w
 }
 
 // RuleSet represents a collection of rules that produce a virtual document.
