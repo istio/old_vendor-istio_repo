@@ -97,18 +97,18 @@ func builtinMinus(a, b ast.Value) (ast.Value, error) {
 		return builtins.FloatToNumber(f), nil
 	}
 
-	s1, ok3 := a.(*ast.Set)
-	s2, ok4 := b.(*ast.Set)
+	s1, ok3 := a.(ast.Set)
+	s2, ok4 := b.(ast.Set)
 
 	if ok3 && ok4 {
 		return s1.Diff(s2), nil
 	}
 
 	if !ok1 && !ok3 {
-		return nil, builtins.NewOperandTypeErr(1, a, ast.NumberTypeName, ast.SetTypeName)
+		return nil, builtins.NewOperandTypeErr(1, a, "number", "set")
 	}
 
-	return nil, builtins.NewOperandTypeErr(2, b, ast.NumberTypeName, ast.SetTypeName)
+	return nil, builtins.NewOperandTypeErr(2, b, "number", "set")
 }
 
 func init() {

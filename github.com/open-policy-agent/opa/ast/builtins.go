@@ -27,44 +27,104 @@ func RegisterBuiltin(b *Builtin) {
 // by default. When adding a new built-in function to OPA, update this
 // list.
 var DefaultBuiltins = [...]*Builtin{
-	// =
+
+	// Unification/equality ("=")
 	Equality,
 
+	// Assignment (":=")
+	Assign,
+
 	// Comparisons
-	GreaterThan, GreaterThanEq, LessThan, LessThanEq, NotEqual,
+	GreaterThan,
+	GreaterThanEq,
+	LessThan,
+	LessThanEq,
+	NotEqual,
+	Equal,
 
 	// Arithmetic
-	Plus, Minus, Multiply, Divide, Round, Abs,
+	Plus,
+	Minus,
+	Multiply,
+	Divide,
+	Round,
+	Abs,
 
 	// Binary
-	And, Or,
+	And,
+	Or,
 
 	// Aggregates
-	Count, Sum, Product, Max, Min,
+	Count,
+	Sum,
+	Product,
+	Max,
+	Min,
 
 	// Casting
 	ToNumber,
 
 	// Regular Expressions
 	RegexMatch,
+	GlobsMatch,
 
 	// Sets
 	SetDiff,
+	Intersection,
+	Union,
 
 	// Strings
-	Concat, FormatInt, IndexOf, Substring, Lower, Upper, Contains, StartsWith, EndsWith, Split, Replace, Trim, Sprintf,
+	Concat,
+	FormatInt,
+	IndexOf,
+	Substring,
+	Lower,
+	Upper,
+	Contains,
+	StartsWith,
+	EndsWith,
+	Split,
+	Replace,
+	Trim,
+	Sprintf,
 
 	// Encoding
-	JSONMarshal, JSONUnmarshal, Base64UrlEncode, Base64UrlDecode, YAMLMarshal, YAMLUnmarshal,
+	JSONMarshal,
+	JSONUnmarshal,
+	Base64UrlEncode,
+	Base64UrlDecode,
+	YAMLMarshal,
+	YAMLUnmarshal,
 
 	// Tokens
 	JWTDecode,
 
 	// Time
-	NowNanos, ParseNanos, ParseRFC3339Nanos, ParseDurationNanos,
+	NowNanos,
+	ParseNanos,
+	ParseRFC3339Nanos,
+	ParseDurationNanos,
+	Date,
+	Clock,
 
 	// Graphs
 	WalkBuiltin,
+
+	// Sort
+	Sort,
+
+	// Types
+	IsNumber,
+	IsString,
+	IsBoolean,
+	IsArray,
+	IsSet,
+	IsObject,
+	IsNull,
+	TypeNameBuiltin,
+
+	// HTTP
+	HTTPSend,
 }
 
 // BuiltinMap provides a convenient mapping of built-in names to
@@ -81,7 +141,21 @@ var Equality = &Builtin{
 	Infix: "=",
 	Decl: types.NewFunction(
 		types.Args(types.A, types.A),
-		types.T,
+		types.B,
+	),
+}
+
+/**
+ * Assignment
+ */
+
+// Assign represents the assignment (":=") operator.
+var Assign = &Builtin{
+	Name:  "assign",
+	Infix: ":=",
+	Decl: types.NewFunction(
+		types.Args(types.A, types.A),
+		types.B,
 	),
 }
 
@@ -95,7 +169,7 @@ var GreaterThan = &Builtin{
 	Infix: ">",
 	Decl: types.NewFunction(
 		types.Args(types.A, types.A),
-		types.T,
+		types.B,
 	),
 }
 
@@ -105,7 +179,7 @@ var GreaterThanEq = &Builtin{
 	Infix: ">=",
 	Decl: types.NewFunction(
 		types.Args(types.A, types.A),
-		types.T,
+		types.B,
 	),
 }
 
@@ -115,7 +189,7 @@ var LessThan = &Builtin{
 	Infix: "<",
 	Decl: types.NewFunction(
 		types.Args(types.A, types.A),
-		types.T,
+		types.B,
 	),
 }
 
@@ -125,7 +199,7 @@ var LessThanEq = &Builtin{
 	Infix: "<=",
 	Decl: types.NewFunction(
 		types.Args(types.A, types.A),
-		types.T,
+		types.B,
 	),
 }
 
@@ -135,7 +209,17 @@ var NotEqual = &Builtin{
 	Infix: "!=",
 	Decl: types.NewFunction(
 		types.Args(types.A, types.A),
-		types.T,
+		types.B,
+	),
+}
+
+// Equal represents the "==" comparison operator.
+var Equal = &Builtin{
+	Name:  "equal",
+	Infix: "==",
+	Decl: types.NewFunction(
+		types.Args(types.A, types.A),
+		types.B,
 	),
 }
 
@@ -348,7 +432,23 @@ var RegexMatch = &Builtin{
 			types.S,
 			types.S,
 		),
-		types.T,
+		types.B,
+	),
+}
+
+// GlobsMatch takes two strings regexp-style strings and evaluates to true if their
+// intersection matches a non-empty set of non-empty strings.
+// Examples:
+//  - "a.a." and ".b.b" -> true.
+//  - "[a-z]*" and [0-9]+" -> not true.
+var GlobsMatch = &Builtin{
+	Name: "regex.globs_match",
+	Decl: types.NewFunction(
+		types.Args(
+			types.S,
+			types.S,
+		),
+		types.B,
 	),
 }
 
@@ -417,7 +517,7 @@ var Contains = &Builtin{
 			types.S,
 			types.S,
 		),
-		types.T,
+		types.B,
 	),
 }
 
@@ -429,7 +529,7 @@ var StartsWith = &Builtin{
 			types.S,
 			types.S,
 		),
-		types.T,
+		types.B,
 	),
 }
 
@@ -441,7 +541,7 @@ var EndsWith = &Builtin{
 			types.S,
 			types.S,
 		),
-		types.T,
+		types.B,
 	),
 }
 
@@ -633,6 +733,24 @@ var ParseDurationNanos = &Builtin{
 	),
 }
 
+// Date returns the [year, month, day] for the nanoseconds since epoch.
+var Date = &Builtin{
+	Name: "time.date",
+	Decl: types.NewFunction(
+		types.Args(types.N),
+		types.NewArray([]types.Type{types.N, types.N, types.N}, nil),
+	),
+}
+
+// Clock returns the [hour, minute, second] of the day for the nanoseconds since epoch.
+var Clock = &Builtin{
+	Name: "time.clock",
+	Decl: types.NewFunction(
+		types.Args(types.N),
+		types.NewArray([]types.Type{types.N, types.N, types.N}, nil),
+	),
+}
+
 /**
  * Graphs.
  */
@@ -640,7 +758,8 @@ var ParseDurationNanos = &Builtin{
 // WalkBuiltin generates [path, value] tuples for all nested documents
 // (recursively).
 var WalkBuiltin = &Builtin{
-	Name: "walk",
+	Name:     "walk",
+	Relation: true,
 	Decl: types.NewFunction(
 		types.Args(types.A),
 		types.NewArray(
@@ -650,6 +769,163 @@ var WalkBuiltin = &Builtin{
 			},
 			nil,
 		),
+	),
+}
+
+/**
+ * Sorting
+ */
+
+// Sort returns a sorted array.
+var Sort = &Builtin{
+	Name: "sort",
+	Decl: types.NewFunction(
+		types.Args(
+			types.NewAny(
+				types.NewArray(nil, types.A),
+				types.NewSet(types.A),
+			),
+		),
+		types.NewArray(nil, types.A),
+	),
+}
+
+/**
+ * Type
+ */
+
+// IsNumber returns true if the input value is a number
+var IsNumber = &Builtin{
+	Name: "is_number",
+	Decl: types.NewFunction(
+		types.Args(
+			types.A,
+		),
+		types.B,
+	),
+}
+
+// IsString returns true if the input value is a string.
+var IsString = &Builtin{
+	Name: "is_string",
+	Decl: types.NewFunction(
+		types.Args(
+			types.A,
+		),
+		types.B,
+	),
+}
+
+// IsBoolean returns true if the input value is a boolean.
+var IsBoolean = &Builtin{
+	Name: "is_boolean",
+	Decl: types.NewFunction(
+		types.Args(
+			types.A,
+		),
+		types.B,
+	),
+}
+
+// IsArray returns true if the input value is an array.
+var IsArray = &Builtin{
+	Name: "is_array",
+	Decl: types.NewFunction(
+		types.Args(
+			types.A,
+		),
+		types.B,
+	),
+}
+
+// IsSet returns true if the input value is a set.
+var IsSet = &Builtin{
+	Name: "is_set",
+	Decl: types.NewFunction(
+		types.Args(
+			types.A,
+		),
+		types.B,
+	),
+}
+
+// IsObject returns true if the input value is an object.
+var IsObject = &Builtin{
+	Name: "is_object",
+	Decl: types.NewFunction(
+		types.Args(
+			types.A,
+		),
+		types.B,
+	),
+}
+
+// IsNull returns true if the input value is null.
+var IsNull = &Builtin{
+	Name: "is_null",
+	Decl: types.NewFunction(
+		types.Args(
+			types.A,
+		),
+		types.B,
+	),
+}
+
+/**
+ * Type Name
+ */
+
+// TypeNameBuiltin returns the type of the input.
+var TypeNameBuiltin = &Builtin{
+	Name: "type_name",
+	Decl: types.NewFunction(
+		types.Args(
+			types.NewAny(
+				types.A,
+			),
+		),
+		types.S,
+	),
+}
+
+/**
+ * HTTP Request
+ */
+
+// HTTPSend returns a HTTP response to the given HTTP request.
+var HTTPSend = &Builtin{
+	Name: "http.send",
+	Decl: types.NewFunction(
+		types.Args(
+			types.NewObject(nil, types.NewDynamicProperty(types.S, types.A)),
+		),
+		types.NewObject(nil, types.NewDynamicProperty(types.A, types.A)),
+	),
+}
+
+/**
+ * Set
+ */
+
+// Intersection returns the intersection of the given input sets
+var Intersection = &Builtin{
+	Name: "intersection",
+	Decl: types.NewFunction(
+		types.Args(
+			types.NewSet(types.NewSet(types.A)),
+		),
+		types.NewSet(types.A),
+	),
+}
+
+// Union returns the union of the given input sets
+var Union = &Builtin{
+	Name: "union",
+	Decl: types.NewFunction(
+		types.Args(
+			types.NewSet(types.NewSet(types.A)),
+		),
+		types.NewSet(types.A),
 	),
 }
 
@@ -672,21 +948,32 @@ var SetDiff = &Builtin{
 // Builtin represents a built-in function supported by OPA. Every built-in
 // function is uniquely identified by a name.
 type Builtin struct {
-	Name  string          // Unique name of built-in function, e.g., <name>(arg1,arg2,...,argN)
-	Infix string          // Unique name of infix operator. Default should be unset.
-	Decl  *types.Function // Built-in function type declaration.
+	Name     string          // Unique name of built-in function, e.g., <name>(arg1,arg2,...,argN)
+	Infix    string          // Unique name of infix operator. Default should be unset.
+	Decl     *types.Function // Built-in function type declaration.
+	Relation bool            // Indicates if the built-in acts as a relation.
 }
 
-// Expr creates a new expression for the built-in with the given terms.
-func (b *Builtin) Expr(terms ...*Term) *Expr {
-	ts := make([]*Term, len(terms)+1)
+// Expr creates a new expression for the built-in with the given operands.
+func (b *Builtin) Expr(operands ...*Term) *Expr {
+	ts := make([]*Term, len(operands)+1)
 	ts[0] = NewTerm(b.Ref())
-	for i := range terms {
-		ts[i+1] = terms[i]
+	for i := range operands {
+		ts[i+1] = operands[i]
 	}
 	return &Expr{
 		Terms: ts,
 	}
+}
+
+// Call creates a new term for the built-in with the given operands.
+func (b *Builtin) Call(operands ...*Term) *Term {
+	call := make(Call, len(operands)+1)
+	call[0] = NewTerm(b.Ref())
+	for i := range operands {
+		call[i+1] = operands[i]
+	}
+	return NewTerm(call)
 }
 
 // Ref returns a Ref that refers to the built-in function.

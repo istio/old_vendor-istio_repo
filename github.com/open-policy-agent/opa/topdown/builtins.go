@@ -42,16 +42,6 @@ type (
 	// framework takes care of this.
 	FunctionalBuiltin3 func(op1, op2, op3 ast.Value) (output ast.Value, err error)
 
-	// FunctionalBuiltinVoid1 defines an interface for simple functional built-ins.
-	//
-	// Implement this interface if your built-in function takes one input and
-	// produces no outputs.
-	//
-	// If an error occurs, the functional built-in should return a descriptive
-	// message. The message should not be prefixed with the built-in name as the
-	// framework takes care of this.
-	FunctionalBuiltinVoid1 func(op1 ast.Value) (err error)
-
 	// BuiltinContext contains context from the evaluator that may be used by
 	// built-in functions.
 	BuiltinContext struct {
@@ -59,19 +49,17 @@ type (
 		Location *ast.Location
 	}
 
-	// BuiltinFunc defines a generic interface for built-in functions.
-	BuiltinFunc func(BuiltinContext, []*ast.Term, func(*ast.Term) error) error
+	// BuiltinFunc defines an interface for implementing built-in functions.
+	// The built-in function is called with the plugged operands from the call
+	// (including the output operands.) The implementation should evaluate the
+	// operands and invoke the iteraror for each successful/defined output
+	// value.
+	BuiltinFunc func(bctx BuiltinContext, operands []*ast.Term, iter func(*ast.Term) error) error
 )
 
 // RegisterBuiltinFunc adds a new built-in function to the evaluation engine.
 func RegisterBuiltinFunc(name string, f BuiltinFunc) {
 	builtinFunctions[name] = f
-}
-
-// RegisterFunctionalBuiltinVoid1 adds a new built-in function to the evaluation
-// engine.
-func RegisterFunctionalBuiltinVoid1(name string, fun FunctionalBuiltinVoid1) {
-	builtinFunctions[name] = functionalWrapperVoid1(name, fun)
 }
 
 // RegisterFunctionalBuiltin1 adds a new built-in function to the evaluation
@@ -102,19 +90,6 @@ func (BuiltinEmpty) Error() string {
 
 var builtinFunctions = map[string]BuiltinFunc{}
 
-func functionalWrapperVoid1(name string, fn FunctionalBuiltinVoid1) BuiltinFunc {
-	return func(bctx BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
-		err := fn(args[0].Value)
-		if err == nil {
-			return iter(ast.BooleanTerm(true))
-		}
-		if _, empty := err.(BuiltinEmpty); empty {
-			return nil
-		}
-		return handleFunctionalBuiltinEr(name, bctx.Location, err)
-	}
-}
-
 func functionalWrapper1(name string, fn FunctionalBuiltin1) BuiltinFunc {
 	return func(bctx BuiltinContext, args []*ast.Term, iter func(*ast.Term) error) error {
 		result, err := fn(args[0].Value)
@@ -124,7 +99,7 @@ func functionalWrapper1(name string, fn FunctionalBuiltin1) BuiltinFunc {
 		if _, empty := err.(BuiltinEmpty); empty {
 			return nil
 		}
-		return handleFunctionalBuiltinEr(name, bctx.Location, err)
+		return handleBuiltinErr(name, bctx.Location, err)
 	}
 }
 
@@ -137,7 +112,7 @@ func functionalWrapper2(name string, fn FunctionalBuiltin2) BuiltinFunc {
 		if _, empty := err.(BuiltinEmpty); empty {
 			return nil
 		}
-		return handleFunctionalBuiltinEr(name, bctx.Location, err)
+		return handleBuiltinErr(name, bctx.Location, err)
 	}
 }
 
@@ -150,11 +125,11 @@ func functionalWrapper3(name string, fn FunctionalBuiltin3) BuiltinFunc {
 		if _, empty := err.(BuiltinEmpty); empty {
 			return nil
 		}
-		return handleFunctionalBuiltinEr(name, bctx.Location, err)
+		return handleBuiltinErr(name, bctx.Location, err)
 	}
 }
 
-func handleFunctionalBuiltinEr(name string, loc *ast.Location, err error) error {
+func handleBuiltinErr(name string, loc *ast.Location, err error) error {
 	switch err := err.(type) {
 	case BuiltinEmpty:
 		return nil

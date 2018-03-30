@@ -7,7 +7,6 @@ package ast
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 
 	"github.com/open-policy-agent/opa/util"
 )
@@ -111,41 +110,10 @@ func Compare(a, b interface{}) int {
 		return termSliceCompare(a, b)
 	case Object:
 		b := b.(Object)
-		keysA := a.Keys()
-		keysB := b.Keys()
-		sort.Sort(termSlice(keysA))
-		sort.Sort(termSlice(keysB))
-		minLen := len(a)
-		if len(b) < len(a) {
-			minLen = len(b)
-		}
-		for i := 0; i < minLen; i++ {
-			keysCmp := Compare(keysA[i], keysB[i])
-			if keysCmp < 0 {
-				return -1
-			}
-			if keysCmp > 0 {
-				return 1
-			}
-			valA := a.Get(keysA[i])
-			valB := b.Get(keysB[i])
-			valCmp := Compare(valA, valB)
-			if valCmp != 0 {
-				return valCmp
-			}
-		}
-		if len(a) < len(b) {
-			return -1
-		}
-		if len(b) < len(a) {
-			return 1
-		}
-		return 0
-	case *Set:
-		b := b.(*Set)
-		sort.Sort(termSlice(*a))
-		sort.Sort(termSlice(*b))
-		return termSliceCompare(*a, *b)
+		return a.Compare(b)
+	case Set:
+		b := b.(Set)
+		return a.Compare(b)
 	case *ArrayComprehension:
 		b := b.(*ArrayComprehension)
 		if cmp := Compare(a.Term, b.Term); cmp != 0 {
@@ -167,6 +135,9 @@ func Compare(a, b interface{}) int {
 			return cmp
 		}
 		return Compare(a.Body, b.Body)
+	case Call:
+		b := b.(Call)
+		return termSliceCompare(a, b)
 	case *Expr:
 		b := b.(*Expr)
 		return a.Compare(b)
@@ -222,7 +193,7 @@ func sortOrder(x interface{}) int {
 		return 6
 	case Object:
 		return 7
-	case *Set:
+	case Set:
 		return 8
 	case *ArrayComprehension:
 		return 9
@@ -230,8 +201,10 @@ func sortOrder(x interface{}) int {
 		return 10
 	case *SetComprehension:
 		return 11
-	case Args:
+	case Call:
 		return 12
+	case Args:
+		return 13
 	case *Expr:
 		return 100
 	case *With:

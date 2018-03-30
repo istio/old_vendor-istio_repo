@@ -7,25 +7,37 @@ Package api is a generated protocol buffer package.
 It is generated from these files:
 	cloud_controller.proto
 	istio.proto
+	common.proto
 
 It has these top-level messages:
+	ListCfRoutesRequest
+	ListCfRoutesResponse
+	ListCfRouteMappingsRequest
+	ListCfRouteMappingsResponse
+	ListCapiDiegoProcessAssociationsRequest
+	DiegoProcessGuids
+	ListCapiDiegoProcessAssociationsResponse
 	Route
 	UpsertRouteRequest
 	UpsertRouteResponse
 	DeleteRouteRequest
 	DeleteRouteResponse
-	CapiProcess
 	RouteMapping
 	MapRouteRequest
 	MapRouteResponse
 	UnmapRouteRequest
 	UnmapRouteResponse
-	HealthRequest
-	HealthResponse
+	CapiDiegoProcessAssociation
+	UpsertCapiDiegoProcessAssociationRequest
+	UpsertCapiDiegoProcessAssociationResponse
+	DeleteCapiDiegoProcessAssociationRequest
+	DeleteCapiDiegoProcessAssociationResponse
 	RoutesRequest
 	RoutesResponse
 	BackendSet
 	Backend
+	HealthResponse
+	HealthRequest
 */
 package api
 
@@ -49,6 +61,111 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type ListCfRoutesRequest struct {
+}
+
+func (m *ListCfRoutesRequest) Reset()                    { *m = ListCfRoutesRequest{} }
+func (m *ListCfRoutesRequest) String() string            { return proto.CompactTextString(m) }
+func (*ListCfRoutesRequest) ProtoMessage()               {}
+func (*ListCfRoutesRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
+type ListCfRoutesResponse struct {
+	// key is route guid
+	// value is host
+	Routes map[string]string `protobuf:"bytes,1,rep,name=routes" json:"routes,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+}
+
+func (m *ListCfRoutesResponse) Reset()                    { *m = ListCfRoutesResponse{} }
+func (m *ListCfRoutesResponse) String() string            { return proto.CompactTextString(m) }
+func (*ListCfRoutesResponse) ProtoMessage()               {}
+func (*ListCfRoutesResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *ListCfRoutesResponse) GetRoutes() map[string]string {
+	if m != nil {
+		return m.Routes
+	}
+	return nil
+}
+
+type ListCfRouteMappingsRequest struct {
+}
+
+func (m *ListCfRouteMappingsRequest) Reset()                    { *m = ListCfRouteMappingsRequest{} }
+func (m *ListCfRouteMappingsRequest) String() string            { return proto.CompactTextString(m) }
+func (*ListCfRouteMappingsRequest) ProtoMessage()               {}
+func (*ListCfRouteMappingsRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+type ListCfRouteMappingsResponse struct {
+	// key is '<route guid>-<capi process guid>'
+	// value is a route_mapping
+	RouteMappings map[string]*RouteMapping `protobuf:"bytes,1,rep,name=route_mappings,json=routeMappings" json:"route_mappings,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+}
+
+func (m *ListCfRouteMappingsResponse) Reset()                    { *m = ListCfRouteMappingsResponse{} }
+func (m *ListCfRouteMappingsResponse) String() string            { return proto.CompactTextString(m) }
+func (*ListCfRouteMappingsResponse) ProtoMessage()               {}
+func (*ListCfRouteMappingsResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *ListCfRouteMappingsResponse) GetRouteMappings() map[string]*RouteMapping {
+	if m != nil {
+		return m.RouteMappings
+	}
+	return nil
+}
+
+type ListCapiDiegoProcessAssociationsRequest struct {
+}
+
+func (m *ListCapiDiegoProcessAssociationsRequest) Reset() {
+	*m = ListCapiDiegoProcessAssociationsRequest{}
+}
+func (m *ListCapiDiegoProcessAssociationsRequest) String() string { return proto.CompactTextString(m) }
+func (*ListCapiDiegoProcessAssociationsRequest) ProtoMessage()    {}
+func (*ListCapiDiegoProcessAssociationsRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{4}
+}
+
+// this is only for ListCapiDiegoProcessAssociationsResponse,
+// since protobuf does not support list values in maps.
+// it's gross. try not to use it.
+type DiegoProcessGuids struct {
+	DiegoProcessGuids []string `protobuf:"bytes,1,rep,name=diego_process_guids,json=diegoProcessGuids" json:"diego_process_guids,omitempty"`
+}
+
+func (m *DiegoProcessGuids) Reset()                    { *m = DiegoProcessGuids{} }
+func (m *DiegoProcessGuids) String() string            { return proto.CompactTextString(m) }
+func (*DiegoProcessGuids) ProtoMessage()               {}
+func (*DiegoProcessGuids) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+
+func (m *DiegoProcessGuids) GetDiegoProcessGuids() []string {
+	if m != nil {
+		return m.DiegoProcessGuids
+	}
+	return nil
+}
+
+type ListCapiDiegoProcessAssociationsResponse struct {
+	// key is capi process guid
+	// value is a list of diego process guids
+	CapiDiegoProcessAssociations map[string]*DiegoProcessGuids `protobuf:"bytes,1,rep,name=capi_diego_process_associations,json=capiDiegoProcessAssociations" json:"capi_diego_process_associations,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+}
+
+func (m *ListCapiDiegoProcessAssociationsResponse) Reset() {
+	*m = ListCapiDiegoProcessAssociationsResponse{}
+}
+func (m *ListCapiDiegoProcessAssociationsResponse) String() string { return proto.CompactTextString(m) }
+func (*ListCapiDiegoProcessAssociationsResponse) ProtoMessage()    {}
+func (*ListCapiDiegoProcessAssociationsResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{6}
+}
+
+func (m *ListCapiDiegoProcessAssociationsResponse) GetCapiDiegoProcessAssociations() map[string]*DiegoProcessGuids {
+	if m != nil {
+		return m.CapiDiegoProcessAssociations
+	}
+	return nil
+}
+
 type Route struct {
 	Guid string `protobuf:"bytes,1,opt,name=guid" json:"guid,omitempty"`
 	Host string `protobuf:"bytes,2,opt,name=host" json:"host,omitempty"`
@@ -57,7 +174,7 @@ type Route struct {
 func (m *Route) Reset()                    { *m = Route{} }
 func (m *Route) String() string            { return proto.CompactTextString(m) }
 func (*Route) ProtoMessage()               {}
-func (*Route) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (*Route) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
 
 func (m *Route) GetGuid() string {
 	if m != nil {
@@ -80,7 +197,7 @@ type UpsertRouteRequest struct {
 func (m *UpsertRouteRequest) Reset()                    { *m = UpsertRouteRequest{} }
 func (m *UpsertRouteRequest) String() string            { return proto.CompactTextString(m) }
 func (*UpsertRouteRequest) ProtoMessage()               {}
-func (*UpsertRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*UpsertRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
 
 func (m *UpsertRouteRequest) GetRoute() *Route {
 	if m != nil {
@@ -95,7 +212,7 @@ type UpsertRouteResponse struct {
 func (m *UpsertRouteResponse) Reset()                    { *m = UpsertRouteResponse{} }
 func (m *UpsertRouteResponse) String() string            { return proto.CompactTextString(m) }
 func (*UpsertRouteResponse) ProtoMessage()               {}
-func (*UpsertRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (*UpsertRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
 
 type DeleteRouteRequest struct {
 	Guid string `protobuf:"bytes,1,opt,name=guid" json:"guid,omitempty"`
@@ -104,7 +221,7 @@ type DeleteRouteRequest struct {
 func (m *DeleteRouteRequest) Reset()                    { *m = DeleteRouteRequest{} }
 func (m *DeleteRouteRequest) String() string            { return proto.CompactTextString(m) }
 func (*DeleteRouteRequest) ProtoMessage()               {}
-func (*DeleteRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*DeleteRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
 
 func (m *DeleteRouteRequest) GetGuid() string {
 	if m != nil {
@@ -119,47 +236,23 @@ type DeleteRouteResponse struct {
 func (m *DeleteRouteResponse) Reset()                    { *m = DeleteRouteResponse{} }
 func (m *DeleteRouteResponse) String() string            { return proto.CompactTextString(m) }
 func (*DeleteRouteResponse) ProtoMessage()               {}
-func (*DeleteRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
-
-type CapiProcess struct {
-	Guid             string `protobuf:"bytes,1,opt,name=guid" json:"guid,omitempty"`
-	DiegoProcessGuid string `protobuf:"bytes,2,opt,name=diego_process_guid,json=diegoProcessGuid" json:"diego_process_guid,omitempty"`
-}
-
-func (m *CapiProcess) Reset()                    { *m = CapiProcess{} }
-func (m *CapiProcess) String() string            { return proto.CompactTextString(m) }
-func (*CapiProcess) ProtoMessage()               {}
-func (*CapiProcess) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
-
-func (m *CapiProcess) GetGuid() string {
-	if m != nil {
-		return m.Guid
-	}
-	return ""
-}
-
-func (m *CapiProcess) GetDiegoProcessGuid() string {
-	if m != nil {
-		return m.DiegoProcessGuid
-	}
-	return ""
-}
+func (*DeleteRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
 
 type RouteMapping struct {
-	CapiProcess *CapiProcess `protobuf:"bytes,1,opt,name=capi_process,json=capiProcess" json:"capi_process,omitempty"`
-	RouteGuid   string       `protobuf:"bytes,2,opt,name=route_guid,json=routeGuid" json:"route_guid,omitempty"`
+	CapiProcessGuid string `protobuf:"bytes,1,opt,name=capi_process_guid,json=capiProcessGuid" json:"capi_process_guid,omitempty"`
+	RouteGuid       string `protobuf:"bytes,2,opt,name=route_guid,json=routeGuid" json:"route_guid,omitempty"`
 }
 
 func (m *RouteMapping) Reset()                    { *m = RouteMapping{} }
 func (m *RouteMapping) String() string            { return proto.CompactTextString(m) }
 func (*RouteMapping) ProtoMessage()               {}
-func (*RouteMapping) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (*RouteMapping) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{12} }
 
-func (m *RouteMapping) GetCapiProcess() *CapiProcess {
+func (m *RouteMapping) GetCapiProcessGuid() string {
 	if m != nil {
-		return m.CapiProcess
+		return m.CapiProcessGuid
 	}
-	return nil
+	return ""
 }
 
 func (m *RouteMapping) GetRouteGuid() string {
@@ -176,7 +269,7 @@ type MapRouteRequest struct {
 func (m *MapRouteRequest) Reset()                    { *m = MapRouteRequest{} }
 func (m *MapRouteRequest) String() string            { return proto.CompactTextString(m) }
 func (*MapRouteRequest) ProtoMessage()               {}
-func (*MapRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+func (*MapRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{13} }
 
 func (m *MapRouteRequest) GetRouteMapping() *RouteMapping {
 	if m != nil {
@@ -191,30 +284,22 @@ type MapRouteResponse struct {
 func (m *MapRouteResponse) Reset()                    { *m = MapRouteResponse{} }
 func (m *MapRouteResponse) String() string            { return proto.CompactTextString(m) }
 func (*MapRouteResponse) ProtoMessage()               {}
-func (*MapRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+func (*MapRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{14} }
 
 type UnmapRouteRequest struct {
-	CapiProcessGuid string `protobuf:"bytes,1,opt,name=capi_process_guid,json=capiProcessGuid" json:"capi_process_guid,omitempty"`
-	RouteGuid       string `protobuf:"bytes,2,opt,name=route_guid,json=routeGuid" json:"route_guid,omitempty"`
+	RouteMapping *RouteMapping `protobuf:"bytes,1,opt,name=route_mapping,json=routeMapping" json:"route_mapping,omitempty"`
 }
 
 func (m *UnmapRouteRequest) Reset()                    { *m = UnmapRouteRequest{} }
 func (m *UnmapRouteRequest) String() string            { return proto.CompactTextString(m) }
 func (*UnmapRouteRequest) ProtoMessage()               {}
-func (*UnmapRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
+func (*UnmapRouteRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{15} }
 
-func (m *UnmapRouteRequest) GetCapiProcessGuid() string {
+func (m *UnmapRouteRequest) GetRouteMapping() *RouteMapping {
 	if m != nil {
-		return m.CapiProcessGuid
+		return m.RouteMapping
 	}
-	return ""
-}
-
-func (m *UnmapRouteRequest) GetRouteGuid() string {
-	if m != nil {
-		return m.RouteGuid
-	}
-	return ""
+	return nil
 }
 
 type UnmapRouteResponse struct {
@@ -223,20 +308,119 @@ type UnmapRouteResponse struct {
 func (m *UnmapRouteResponse) Reset()                    { *m = UnmapRouteResponse{} }
 func (m *UnmapRouteResponse) String() string            { return proto.CompactTextString(m) }
 func (*UnmapRouteResponse) ProtoMessage()               {}
-func (*UnmapRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
+func (*UnmapRouteResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{16} }
+
+type CapiDiegoProcessAssociation struct {
+	CapiProcessGuid   string   `protobuf:"bytes,1,opt,name=capi_process_guid,json=capiProcessGuid" json:"capi_process_guid,omitempty"`
+	DiegoProcessGuids []string `protobuf:"bytes,2,rep,name=diego_process_guids,json=diegoProcessGuids" json:"diego_process_guids,omitempty"`
+}
+
+func (m *CapiDiegoProcessAssociation) Reset()                    { *m = CapiDiegoProcessAssociation{} }
+func (m *CapiDiegoProcessAssociation) String() string            { return proto.CompactTextString(m) }
+func (*CapiDiegoProcessAssociation) ProtoMessage()               {}
+func (*CapiDiegoProcessAssociation) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{17} }
+
+func (m *CapiDiegoProcessAssociation) GetCapiProcessGuid() string {
+	if m != nil {
+		return m.CapiProcessGuid
+	}
+	return ""
+}
+
+func (m *CapiDiegoProcessAssociation) GetDiegoProcessGuids() []string {
+	if m != nil {
+		return m.DiegoProcessGuids
+	}
+	return nil
+}
+
+type UpsertCapiDiegoProcessAssociationRequest struct {
+	CapiDiegoProcessAssociation *CapiDiegoProcessAssociation `protobuf:"bytes,1,opt,name=capi_diego_process_association,json=capiDiegoProcessAssociation" json:"capi_diego_process_association,omitempty"`
+}
+
+func (m *UpsertCapiDiegoProcessAssociationRequest) Reset() {
+	*m = UpsertCapiDiegoProcessAssociationRequest{}
+}
+func (m *UpsertCapiDiegoProcessAssociationRequest) String() string { return proto.CompactTextString(m) }
+func (*UpsertCapiDiegoProcessAssociationRequest) ProtoMessage()    {}
+func (*UpsertCapiDiegoProcessAssociationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{18}
+}
+
+func (m *UpsertCapiDiegoProcessAssociationRequest) GetCapiDiegoProcessAssociation() *CapiDiegoProcessAssociation {
+	if m != nil {
+		return m.CapiDiegoProcessAssociation
+	}
+	return nil
+}
+
+type UpsertCapiDiegoProcessAssociationResponse struct {
+}
+
+func (m *UpsertCapiDiegoProcessAssociationResponse) Reset() {
+	*m = UpsertCapiDiegoProcessAssociationResponse{}
+}
+func (m *UpsertCapiDiegoProcessAssociationResponse) String() string { return proto.CompactTextString(m) }
+func (*UpsertCapiDiegoProcessAssociationResponse) ProtoMessage()    {}
+func (*UpsertCapiDiegoProcessAssociationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{19}
+}
+
+type DeleteCapiDiegoProcessAssociationRequest struct {
+	CapiProcessGuid string `protobuf:"bytes,1,opt,name=capi_process_guid,json=capiProcessGuid" json:"capi_process_guid,omitempty"`
+}
+
+func (m *DeleteCapiDiegoProcessAssociationRequest) Reset() {
+	*m = DeleteCapiDiegoProcessAssociationRequest{}
+}
+func (m *DeleteCapiDiegoProcessAssociationRequest) String() string { return proto.CompactTextString(m) }
+func (*DeleteCapiDiegoProcessAssociationRequest) ProtoMessage()    {}
+func (*DeleteCapiDiegoProcessAssociationRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{20}
+}
+
+func (m *DeleteCapiDiegoProcessAssociationRequest) GetCapiProcessGuid() string {
+	if m != nil {
+		return m.CapiProcessGuid
+	}
+	return ""
+}
+
+type DeleteCapiDiegoProcessAssociationResponse struct {
+}
+
+func (m *DeleteCapiDiegoProcessAssociationResponse) Reset() {
+	*m = DeleteCapiDiegoProcessAssociationResponse{}
+}
+func (m *DeleteCapiDiegoProcessAssociationResponse) String() string { return proto.CompactTextString(m) }
+func (*DeleteCapiDiegoProcessAssociationResponse) ProtoMessage()    {}
+func (*DeleteCapiDiegoProcessAssociationResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor0, []int{21}
+}
 
 func init() {
+	proto.RegisterType((*ListCfRoutesRequest)(nil), "api.ListCfRoutesRequest")
+	proto.RegisterType((*ListCfRoutesResponse)(nil), "api.ListCfRoutesResponse")
+	proto.RegisterType((*ListCfRouteMappingsRequest)(nil), "api.ListCfRouteMappingsRequest")
+	proto.RegisterType((*ListCfRouteMappingsResponse)(nil), "api.ListCfRouteMappingsResponse")
+	proto.RegisterType((*ListCapiDiegoProcessAssociationsRequest)(nil), "api.ListCapiDiegoProcessAssociationsRequest")
+	proto.RegisterType((*DiegoProcessGuids)(nil), "api.DiegoProcessGuids")
+	proto.RegisterType((*ListCapiDiegoProcessAssociationsResponse)(nil), "api.ListCapiDiegoProcessAssociationsResponse")
 	proto.RegisterType((*Route)(nil), "api.Route")
 	proto.RegisterType((*UpsertRouteRequest)(nil), "api.UpsertRouteRequest")
 	proto.RegisterType((*UpsertRouteResponse)(nil), "api.UpsertRouteResponse")
 	proto.RegisterType((*DeleteRouteRequest)(nil), "api.DeleteRouteRequest")
 	proto.RegisterType((*DeleteRouteResponse)(nil), "api.DeleteRouteResponse")
-	proto.RegisterType((*CapiProcess)(nil), "api.CapiProcess")
 	proto.RegisterType((*RouteMapping)(nil), "api.RouteMapping")
 	proto.RegisterType((*MapRouteRequest)(nil), "api.MapRouteRequest")
 	proto.RegisterType((*MapRouteResponse)(nil), "api.MapRouteResponse")
 	proto.RegisterType((*UnmapRouteRequest)(nil), "api.UnmapRouteRequest")
 	proto.RegisterType((*UnmapRouteResponse)(nil), "api.UnmapRouteResponse")
+	proto.RegisterType((*CapiDiegoProcessAssociation)(nil), "api.CapiDiegoProcessAssociation")
+	proto.RegisterType((*UpsertCapiDiegoProcessAssociationRequest)(nil), "api.UpsertCapiDiegoProcessAssociationRequest")
+	proto.RegisterType((*UpsertCapiDiegoProcessAssociationResponse)(nil), "api.UpsertCapiDiegoProcessAssociationResponse")
+	proto.RegisterType((*DeleteCapiDiegoProcessAssociationRequest)(nil), "api.DeleteCapiDiegoProcessAssociationRequest")
+	proto.RegisterType((*DeleteCapiDiegoProcessAssociationResponse)(nil), "api.DeleteCapiDiegoProcessAssociationResponse")
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -250,10 +434,16 @@ const _ = grpc.SupportPackageIsVersion4
 // Client API for CloudControllerCopilot service
 
 type CloudControllerCopilotClient interface {
+	ListCfRoutes(ctx context.Context, in *ListCfRoutesRequest, opts ...grpc.CallOption) (*ListCfRoutesResponse, error)
+	ListCfRouteMappings(ctx context.Context, in *ListCfRouteMappingsRequest, opts ...grpc.CallOption) (*ListCfRouteMappingsResponse, error)
+	ListCapiDiegoProcessAssociations(ctx context.Context, in *ListCapiDiegoProcessAssociationsRequest, opts ...grpc.CallOption) (*ListCapiDiegoProcessAssociationsResponse, error)
 	UpsertRoute(ctx context.Context, in *UpsertRouteRequest, opts ...grpc.CallOption) (*UpsertRouteResponse, error)
 	DeleteRoute(ctx context.Context, in *DeleteRouteRequest, opts ...grpc.CallOption) (*DeleteRouteResponse, error)
 	MapRoute(ctx context.Context, in *MapRouteRequest, opts ...grpc.CallOption) (*MapRouteResponse, error)
 	UnmapRoute(ctx context.Context, in *UnmapRouteRequest, opts ...grpc.CallOption) (*UnmapRouteResponse, error)
+	UpsertCapiDiegoProcessAssociation(ctx context.Context, in *UpsertCapiDiegoProcessAssociationRequest, opts ...grpc.CallOption) (*UpsertCapiDiegoProcessAssociationResponse, error)
+	DeleteCapiDiegoProcessAssociation(ctx context.Context, in *DeleteCapiDiegoProcessAssociationRequest, opts ...grpc.CallOption) (*DeleteCapiDiegoProcessAssociationResponse, error)
+	Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error)
 }
 
 type cloudControllerCopilotClient struct {
@@ -262,6 +452,33 @@ type cloudControllerCopilotClient struct {
 
 func NewCloudControllerCopilotClient(cc *grpc.ClientConn) CloudControllerCopilotClient {
 	return &cloudControllerCopilotClient{cc}
+}
+
+func (c *cloudControllerCopilotClient) ListCfRoutes(ctx context.Context, in *ListCfRoutesRequest, opts ...grpc.CallOption) (*ListCfRoutesResponse, error) {
+	out := new(ListCfRoutesResponse)
+	err := grpc.Invoke(ctx, "/api.CloudControllerCopilot/ListCfRoutes", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cloudControllerCopilotClient) ListCfRouteMappings(ctx context.Context, in *ListCfRouteMappingsRequest, opts ...grpc.CallOption) (*ListCfRouteMappingsResponse, error) {
+	out := new(ListCfRouteMappingsResponse)
+	err := grpc.Invoke(ctx, "/api.CloudControllerCopilot/ListCfRouteMappings", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cloudControllerCopilotClient) ListCapiDiegoProcessAssociations(ctx context.Context, in *ListCapiDiegoProcessAssociationsRequest, opts ...grpc.CallOption) (*ListCapiDiegoProcessAssociationsResponse, error) {
+	out := new(ListCapiDiegoProcessAssociationsResponse)
+	err := grpc.Invoke(ctx, "/api.CloudControllerCopilot/ListCapiDiegoProcessAssociations", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *cloudControllerCopilotClient) UpsertRoute(ctx context.Context, in *UpsertRouteRequest, opts ...grpc.CallOption) (*UpsertRouteResponse, error) {
@@ -300,17 +517,104 @@ func (c *cloudControllerCopilotClient) UnmapRoute(ctx context.Context, in *Unmap
 	return out, nil
 }
 
+func (c *cloudControllerCopilotClient) UpsertCapiDiegoProcessAssociation(ctx context.Context, in *UpsertCapiDiegoProcessAssociationRequest, opts ...grpc.CallOption) (*UpsertCapiDiegoProcessAssociationResponse, error) {
+	out := new(UpsertCapiDiegoProcessAssociationResponse)
+	err := grpc.Invoke(ctx, "/api.CloudControllerCopilot/UpsertCapiDiegoProcessAssociation", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cloudControllerCopilotClient) DeleteCapiDiegoProcessAssociation(ctx context.Context, in *DeleteCapiDiegoProcessAssociationRequest, opts ...grpc.CallOption) (*DeleteCapiDiegoProcessAssociationResponse, error) {
+	out := new(DeleteCapiDiegoProcessAssociationResponse)
+	err := grpc.Invoke(ctx, "/api.CloudControllerCopilot/DeleteCapiDiegoProcessAssociation", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *cloudControllerCopilotClient) Health(ctx context.Context, in *HealthRequest, opts ...grpc.CallOption) (*HealthResponse, error) {
+	out := new(HealthResponse)
+	err := grpc.Invoke(ctx, "/api.CloudControllerCopilot/Health", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for CloudControllerCopilot service
 
 type CloudControllerCopilotServer interface {
+	ListCfRoutes(context.Context, *ListCfRoutesRequest) (*ListCfRoutesResponse, error)
+	ListCfRouteMappings(context.Context, *ListCfRouteMappingsRequest) (*ListCfRouteMappingsResponse, error)
+	ListCapiDiegoProcessAssociations(context.Context, *ListCapiDiegoProcessAssociationsRequest) (*ListCapiDiegoProcessAssociationsResponse, error)
 	UpsertRoute(context.Context, *UpsertRouteRequest) (*UpsertRouteResponse, error)
 	DeleteRoute(context.Context, *DeleteRouteRequest) (*DeleteRouteResponse, error)
 	MapRoute(context.Context, *MapRouteRequest) (*MapRouteResponse, error)
 	UnmapRoute(context.Context, *UnmapRouteRequest) (*UnmapRouteResponse, error)
+	UpsertCapiDiegoProcessAssociation(context.Context, *UpsertCapiDiegoProcessAssociationRequest) (*UpsertCapiDiegoProcessAssociationResponse, error)
+	DeleteCapiDiegoProcessAssociation(context.Context, *DeleteCapiDiegoProcessAssociationRequest) (*DeleteCapiDiegoProcessAssociationResponse, error)
+	Health(context.Context, *HealthRequest) (*HealthResponse, error)
 }
 
 func RegisterCloudControllerCopilotServer(s *grpc.Server, srv CloudControllerCopilotServer) {
 	s.RegisterService(&_CloudControllerCopilot_serviceDesc, srv)
+}
+
+func _CloudControllerCopilot_ListCfRoutes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCfRoutesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudControllerCopilotServer).ListCfRoutes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.CloudControllerCopilot/ListCfRoutes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudControllerCopilotServer).ListCfRoutes(ctx, req.(*ListCfRoutesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CloudControllerCopilot_ListCfRouteMappings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCfRouteMappingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudControllerCopilotServer).ListCfRouteMappings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.CloudControllerCopilot/ListCfRouteMappings",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudControllerCopilotServer).ListCfRouteMappings(ctx, req.(*ListCfRouteMappingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CloudControllerCopilot_ListCapiDiegoProcessAssociations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListCapiDiegoProcessAssociationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudControllerCopilotServer).ListCapiDiegoProcessAssociations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.CloudControllerCopilot/ListCapiDiegoProcessAssociations",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudControllerCopilotServer).ListCapiDiegoProcessAssociations(ctx, req.(*ListCapiDiegoProcessAssociationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _CloudControllerCopilot_UpsertRoute_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -385,10 +689,76 @@ func _CloudControllerCopilot_UnmapRoute_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CloudControllerCopilot_UpsertCapiDiegoProcessAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpsertCapiDiegoProcessAssociationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudControllerCopilotServer).UpsertCapiDiegoProcessAssociation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.CloudControllerCopilot/UpsertCapiDiegoProcessAssociation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudControllerCopilotServer).UpsertCapiDiegoProcessAssociation(ctx, req.(*UpsertCapiDiegoProcessAssociationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CloudControllerCopilot_DeleteCapiDiegoProcessAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteCapiDiegoProcessAssociationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudControllerCopilotServer).DeleteCapiDiegoProcessAssociation(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.CloudControllerCopilot/DeleteCapiDiegoProcessAssociation",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudControllerCopilotServer).DeleteCapiDiegoProcessAssociation(ctx, req.(*DeleteCapiDiegoProcessAssociationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CloudControllerCopilot_Health_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HealthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CloudControllerCopilotServer).Health(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/api.CloudControllerCopilot/Health",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CloudControllerCopilotServer).Health(ctx, req.(*HealthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _CloudControllerCopilot_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "api.CloudControllerCopilot",
 	HandlerType: (*CloudControllerCopilotServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ListCfRoutes",
+			Handler:    _CloudControllerCopilot_ListCfRoutes_Handler,
+		},
+		{
+			MethodName: "ListCfRouteMappings",
+			Handler:    _CloudControllerCopilot_ListCfRouteMappings_Handler,
+		},
+		{
+			MethodName: "ListCapiDiegoProcessAssociations",
+			Handler:    _CloudControllerCopilot_ListCapiDiegoProcessAssociations_Handler,
+		},
 		{
 			MethodName: "UpsertRoute",
 			Handler:    _CloudControllerCopilot_UpsertRoute_Handler,
@@ -405,6 +775,18 @@ var _CloudControllerCopilot_serviceDesc = grpc.ServiceDesc{
 			MethodName: "UnmapRoute",
 			Handler:    _CloudControllerCopilot_UnmapRoute_Handler,
 		},
+		{
+			MethodName: "UpsertCapiDiegoProcessAssociation",
+			Handler:    _CloudControllerCopilot_UpsertCapiDiegoProcessAssociation_Handler,
+		},
+		{
+			MethodName: "DeleteCapiDiegoProcessAssociation",
+			Handler:    _CloudControllerCopilot_DeleteCapiDiegoProcessAssociation_Handler,
+		},
+		{
+			MethodName: "Health",
+			Handler:    _CloudControllerCopilot_Health_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "cloud_controller.proto",
@@ -413,30 +795,54 @@ var _CloudControllerCopilot_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("cloud_controller.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 391 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x84, 0x53, 0x5b, 0x6b, 0xea, 0x40,
-	0x10, 0x56, 0xcf, 0xf1, 0x70, 0x9c, 0x58, 0xd4, 0xa9, 0x37, 0x84, 0x82, 0xe4, 0x49, 0x4a, 0xb1,
-	0xa0, 0x20, 0xf4, 0xa9, 0xd0, 0x14, 0x4a, 0x1f, 0xa4, 0x25, 0xe0, 0x6b, 0x43, 0x8c, 0x8b, 0x5d,
-	0x88, 0xd9, 0x6d, 0xb2, 0xf9, 0x37, 0xfd, 0xb1, 0x65, 0x2f, 0xea, 0x26, 0x11, 0xfa, 0x96, 0x9d,
-	0x9d, 0xef, 0x36, 0x3b, 0x81, 0x61, 0x14, 0xb3, 0x7c, 0x17, 0x44, 0x2c, 0x11, 0x29, 0x8b, 0x63,
-	0x92, 0xce, 0x79, 0xca, 0x04, 0xc3, 0x3f, 0x21, 0xa7, 0xee, 0x3d, 0x34, 0x7d, 0x96, 0x0b, 0x82,
-	0x08, 0x7f, 0xf7, 0x39, 0xdd, 0x8d, 0xeb, 0xd3, 0xfa, 0xac, 0xe5, 0xab, 0x6f, 0x59, 0xfb, 0x64,
-	0x99, 0x18, 0x37, 0x74, 0x4d, 0x7e, 0xbb, 0x2b, 0xc0, 0x0d, 0xcf, 0x48, 0x2a, 0x14, 0xcc, 0x27,
-	0x5f, 0x39, 0xc9, 0x04, 0x4e, 0xa1, 0x99, 0xca, 0xb3, 0x82, 0x3b, 0x0b, 0x98, 0x87, 0x9c, 0xce,
-	0x75, 0x87, 0xbe, 0x70, 0x07, 0x70, 0x5d, 0xc0, 0x65, 0x9c, 0x25, 0x19, 0x71, 0x67, 0x80, 0xcf,
-	0x24, 0x26, 0x82, 0x14, 0xe8, 0x2e, 0x98, 0x91, 0x04, 0x85, 0x4e, 0x43, 0xf0, 0x06, 0x8e, 0x17,
-	0x72, 0xfa, 0x9e, 0xb2, 0x88, 0x64, 0xd9, 0xc5, 0x18, 0x77, 0x80, 0x3b, 0x4a, 0xf6, 0x2c, 0xe0,
-	0xba, 0x29, 0x50, 0x1d, 0x3a, 0x54, 0x57, 0xdd, 0x18, 0xf4, 0x8b, 0xd4, 0xd9, 0x42, 0x5b, 0x29,
-	0xac, 0x43, 0xce, 0x69, 0xb2, 0xc7, 0x25, 0xb4, 0xa3, 0x90, 0xd3, 0x23, 0xd8, 0x24, 0xec, 0xaa,
-	0x84, 0x96, 0xb2, 0xef, 0x44, 0x96, 0x8d, 0x1b, 0x00, 0x15, 0xdb, 0x96, 0x6a, 0xa9, 0x8a, 0xd2,
-	0x78, 0x85, 0xce, 0x3a, 0xe4, 0x85, 0xc8, 0x2b, 0xb8, 0xd2, 0x88, 0x83, 0xd6, 0x35, 0x3a, 0xbd,
-	0xf3, 0x24, 0x8d, 0x21, 0xbf, 0x9d, 0x5a, 0x27, 0x17, 0xa1, 0x7b, 0xa6, 0x32, 0x33, 0xf9, 0x80,
-	0xde, 0x26, 0x39, 0x94, 0x04, 0x6e, 0xa1, 0x67, 0xe7, 0x08, 0xac, 0x31, 0x75, 0x2c, 0xeb, 0xd2,
-	0xdf, 0x6f, 0xf6, 0xfb, 0x80, 0x36, 0xbf, 0x56, 0x5d, 0x7c, 0x37, 0x60, 0xe8, 0xc9, 0x55, 0xf3,
-	0x4e, 0x9b, 0xe6, 0x31, 0x4e, 0x63, 0x26, 0xf0, 0x09, 0x1c, 0xeb, 0xf1, 0x71, 0xa4, 0x42, 0x55,
-	0xd7, 0x68, 0x32, 0xae, 0x5e, 0x98, 0x48, 0x35, 0xc9, 0x61, 0xbd, 0xbf, 0xe1, 0xa8, 0xee, 0x8e,
-	0xe1, 0xb8, 0xb4, 0x2a, 0x35, 0x7c, 0x80, 0xff, 0xc7, 0x61, 0x61, 0x5f, 0xf5, 0x95, 0x9e, 0x61,
-	0x32, 0x28, 0x55, 0x4f, 0xd0, 0x47, 0x80, 0x73, 0x66, 0x1c, 0x6a, 0xa3, 0xe5, 0x21, 0x4f, 0x46,
-	0x95, 0xfa, 0x91, 0x60, 0xfb, 0x4f, 0xfd, 0x75, 0xcb, 0x9f, 0x00, 0x00, 0x00, 0xff, 0xff, 0x14,
-	0x16, 0x0e, 0x5d, 0x8f, 0x03, 0x00, 0x00,
+	// 772 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x5f, 0x4f, 0xd3, 0x50,
+	0x14, 0x5f, 0x87, 0xa0, 0x9c, 0x0d, 0x61, 0x87, 0x01, 0xb3, 0xa0, 0x8c, 0x26, 0x86, 0xa1, 0x50,
+	0x93, 0x91, 0x10, 0x31, 0x31, 0x46, 0x07, 0x51, 0xa3, 0x44, 0x33, 0x83, 0x89, 0xbc, 0x2c, 0xb5,
+	0xbb, 0x8e, 0xc6, 0xae, 0xb7, 0xb6, 0x9d, 0x09, 0x8f, 0x26, 0xc6, 0x67, 0x7d, 0xf1, 0x53, 0xf8,
+	0x59, 0xfc, 0x4c, 0xa6, 0xf7, 0xde, 0x6d, 0xb7, 0x6b, 0xd7, 0x76, 0x89, 0x6f, 0xeb, 0xef, 0x9e,
+	0xf3, 0xbb, 0xbf, 0x73, 0xee, 0xf9, 0x33, 0x58, 0x37, 0x6d, 0x3a, 0xe8, 0x76, 0x4c, 0xea, 0x04,
+	0x1e, 0xb5, 0x6d, 0xe2, 0xe9, 0xae, 0x47, 0x03, 0x8a, 0x73, 0x86, 0x6b, 0xa9, 0x65, 0x93, 0xf6,
+	0xfb, 0xd4, 0xe1, 0x90, 0xb6, 0x06, 0xab, 0xaf, 0x2d, 0x3f, 0x68, 0x7d, 0x6a, 0xd3, 0x41, 0x40,
+	0xfc, 0x36, 0xf9, 0x32, 0x20, 0x7e, 0xa0, 0xfd, 0x54, 0xa0, 0x1a, 0xc5, 0x7d, 0x97, 0x3a, 0x3e,
+	0xc1, 0xc7, 0xb0, 0xe0, 0x31, 0xa4, 0xa6, 0xd4, 0xe7, 0x1a, 0xa5, 0xe6, 0x5d, 0xdd, 0x70, 0x2d,
+	0x3d, 0xc9, 0x54, 0xe7, 0x9f, 0xa7, 0x4e, 0xe0, 0x5d, 0xb5, 0x85, 0x93, 0x7a, 0x0c, 0x25, 0x09,
+	0xc6, 0x15, 0x98, 0xfb, 0x4c, 0xae, 0x6a, 0x4a, 0x5d, 0x69, 0x2c, 0xb6, 0xc3, 0x9f, 0x58, 0x85,
+	0xf9, 0xaf, 0x86, 0x3d, 0x20, 0xb5, 0x22, 0xc3, 0xf8, 0xc7, 0xa3, 0xe2, 0x43, 0x45, 0xdb, 0x02,
+	0x55, 0xba, 0xe6, 0xcc, 0x70, 0x5d, 0xcb, 0xe9, 0x8d, 0x04, 0xff, 0x55, 0x60, 0x33, 0xf1, 0x58,
+	0xe8, 0xbe, 0x80, 0x9b, 0x4c, 0x42, 0xa7, 0x2f, 0x4e, 0x84, 0xfe, 0xc3, 0x49, 0xfd, 0x93, 0x9e,
+	0x7a, 0x04, 0xe5, 0xd1, 0x2c, 0x79, 0x32, 0xa6, 0xbe, 0x03, 0x8c, 0x1b, 0x25, 0xc4, 0xb6, 0x2b,
+	0xc7, 0x56, 0x6a, 0x56, 0xd8, 0xd5, 0xb2, 0xa7, 0x1c, 0xee, 0x1e, 0xec, 0x32, 0x55, 0x86, 0x6b,
+	0x9d, 0x58, 0xa4, 0x47, 0xdf, 0x7a, 0xd4, 0x24, 0xbe, 0xff, 0xd4, 0xf7, 0xa9, 0x69, 0x19, 0x81,
+	0x45, 0x9d, 0x51, 0xec, 0x2d, 0xa8, 0xc8, 0x26, 0xcf, 0x07, 0x56, 0xd7, 0x47, 0x1d, 0x56, 0xbb,
+	0x21, 0xd8, 0x71, 0x39, 0xda, 0xe9, 0x85, 0x30, 0x8b, 0x7a, 0xb1, 0x5d, 0xe9, 0x4e, 0xda, 0x6b,
+	0x7f, 0x8a, 0xd0, 0xc8, 0xbe, 0x50, 0x64, 0xf3, 0xb7, 0x02, 0xdb, 0xa6, 0xe1, 0x5a, 0x9d, 0xe8,
+	0x15, 0x86, 0x64, 0x2b, 0xf2, 0xfb, 0x66, 0x9c, 0xdf, 0x1c, 0xc4, 0x7a, 0x9a, 0x11, 0xcf, 0xfd,
+	0x96, 0x99, 0x62, 0xa2, 0xf6, 0x60, 0x27, 0x93, 0x22, 0xe1, 0x65, 0xf6, 0xa3, 0x2f, 0xb3, 0xce,
+	0x44, 0xc7, 0x72, 0x2a, 0x3f, 0xcf, 0x03, 0x98, 0x67, 0x2f, 0x87, 0x08, 0xd7, 0xc2, 0xcc, 0x0a,
+	0x36, 0xf6, 0x3b, 0xc4, 0x2e, 0xa9, 0x1f, 0x88, 0x1a, 0x66, 0xbf, 0xb5, 0x23, 0xc0, 0x73, 0xd7,
+	0x27, 0x5e, 0xc0, 0xdc, 0xc4, 0xd3, 0x61, 0x1d, 0xe6, 0x59, 0x2d, 0x31, 0xf7, 0x52, 0x13, 0xc6,
+	0x25, 0xd1, 0xe6, 0x07, 0x61, 0x83, 0x46, 0xfc, 0x78, 0xa2, 0xb4, 0x06, 0xe0, 0x09, 0xb1, 0x49,
+	0x40, 0x22, 0x74, 0x09, 0x62, 0x42, 0x82, 0x88, 0xa5, 0x20, 0xf8, 0x00, 0x65, 0xb9, 0xf4, 0xf0,
+	0x1e, 0x54, 0xd8, 0x8b, 0xca, 0xe5, 0x22, 0x78, 0x96, 0xc3, 0x03, 0x29, 0x11, 0x78, 0x1b, 0x80,
+	0x37, 0x13, 0x33, 0xe2, 0x51, 0x2e, 0x32, 0x24, 0x3c, 0xd6, 0x5e, 0xc2, 0xf2, 0x99, 0xe1, 0x46,
+	0x84, 0x1d, 0xc1, 0x52, 0xa4, 0xfd, 0x44, 0xbc, 0x09, 0x2d, 0x50, 0x96, 0x7b, 0x4b, 0x43, 0x58,
+	0x19, 0x53, 0x09, 0xe5, 0xaf, 0xa0, 0x72, 0xee, 0xf4, 0xff, 0xd3, 0x05, 0x55, 0x40, 0x99, 0x4c,
+	0x5c, 0x71, 0x05, 0x9b, 0x29, 0x65, 0x34, 0x53, 0xae, 0xa6, 0xf4, 0x61, 0x71, 0x5a, 0x1f, 0xfe,
+	0x52, 0xa0, 0xc1, 0x1f, 0x3c, 0x45, 0xc1, 0x30, 0x6a, 0x02, 0x77, 0xd2, 0xdb, 0x50, 0xa4, 0xa1,
+	0xce, 0xd2, 0x90, 0x46, 0xb8, 0x99, 0xd2, 0x56, 0xda, 0x7d, 0xd8, 0xcb, 0x21, 0x49, 0xe4, 0xee,
+	0x3d, 0x34, 0x78, 0xbd, 0xe5, 0xd0, 0x3f, 0x43, 0x22, 0x43, 0x11, 0x39, 0x78, 0xb9, 0x88, 0xe6,
+	0x8f, 0xeb, 0xb0, 0xde, 0x0a, 0x97, 0x60, 0x6b, 0xb4, 0x03, 0x5b, 0xd4, 0xb5, 0x6c, 0x1a, 0xe0,
+	0x29, 0x94, 0xe5, 0x75, 0x85, 0xb5, 0x84, 0x0d, 0xc6, 0xd4, 0xa9, 0xb7, 0xa6, 0xee, 0x36, 0xad,
+	0x80, 0x17, 0x91, 0xc5, 0x39, 0x1c, 0xfd, 0xb8, 0x3d, 0x7d, 0x9f, 0x70, 0xd2, 0x7a, 0xd6, 0xc2,
+	0xd1, 0x0a, 0xf8, 0x4d, 0x81, 0x7a, 0xd6, 0xc8, 0xc4, 0xfd, 0x9c, 0x93, 0x95, 0x5f, 0x7b, 0x30,
+	0xd3, 0x1c, 0xd6, 0x0a, 0xf8, 0x0c, 0x4a, 0xd2, 0xdc, 0xc1, 0x0d, 0xe6, 0x1f, 0x9f, 0x60, 0x6a,
+	0x2d, 0x7e, 0x20, 0x73, 0x48, 0xa3, 0x47, 0x70, 0xc4, 0xc7, 0x96, 0xe0, 0x48, 0x9a, 0x52, 0x05,
+	0x3c, 0x86, 0x1b, 0xc3, 0x09, 0x80, 0x55, 0x66, 0x37, 0x31, 0x5b, 0xd4, 0xb5, 0x09, 0x74, 0xe4,
+	0xfa, 0x04, 0x60, 0xdc, 0xdb, 0xc8, 0x87, 0x7a, 0x6c, 0x72, 0xa8, 0x1b, 0x31, 0x7c, 0x44, 0xf0,
+	0x5d, 0x81, 0x9d, 0xcc, 0xc2, 0xc7, 0x03, 0x29, 0x03, 0xd9, 0x35, 0xaf, 0xea, 0x79, 0xcd, 0x23,
+	0x32, 0x32, 0x4b, 0x5f, 0xc8, 0xc8, 0xdb, 0x7a, 0x42, 0x46, 0xee, 0x8e, 0xd2, 0x0a, 0x78, 0x08,
+	0x0b, 0x2f, 0x88, 0x61, 0x07, 0x97, 0x88, 0xcc, 0x97, 0x7f, 0x0c, 0xf9, 0x56, 0x23, 0xd8, 0xd0,
+	0xe9, 0xe3, 0x02, 0xfb, 0x9b, 0x79, 0xf8, 0x2f, 0x00, 0x00, 0xff, 0xff, 0xfd, 0x0f, 0x60, 0x95,
+	0x93, 0x0a, 0x00, 0x00,
 }

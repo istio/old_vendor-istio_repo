@@ -58,26 +58,24 @@ func builtinConcat(a, b ast.Value) (ast.Value, error) {
 		for i := range b {
 			s, ok := b[i].Value.(ast.String)
 			if !ok {
-				return nil, builtins.NewOperandElementErr(2, b, b[i].Value, ast.StringTypeName)
+				return nil, builtins.NewOperandElementErr(2, b, b[i].Value, "string")
 			}
 			strs = append(strs, string(s))
 		}
-	case *ast.Set:
-		var err error
-		stopped := b.Iter(func(x *ast.Term) bool {
+	case ast.Set:
+		err := b.Iter(func(x *ast.Term) error {
 			s, ok := x.Value.(ast.String)
 			if !ok {
-				err = builtins.NewOperandElementErr(2, b, x.Value, ast.StringTypeName)
-				return true
+				return builtins.NewOperandElementErr(2, b, x.Value, "string")
 			}
 			strs = append(strs, string(s))
-			return false
+			return nil
 		})
-		if stopped {
+		if err != nil {
 			return nil, err
 		}
 	default:
-		return nil, builtins.NewOperandTypeErr(2, b, ast.SetTypeName, ast.ArrayTypeName)
+		return nil, builtins.NewOperandTypeErr(2, b, "set", "array")
 	}
 
 	return ast.String(strings.Join(strs, string(join))), nil
@@ -136,11 +134,7 @@ func builtinContains(a, b ast.Value) (ast.Value, error) {
 		return nil, err
 	}
 
-	if !strings.Contains(string(s), string(substr)) {
-		return nil, BuiltinEmpty{}
-	}
-
-	return ast.Boolean(true), nil
+	return ast.Boolean(strings.Contains(string(s), string(substr))), nil
 }
 
 func builtinStartsWith(a, b ast.Value) (ast.Value, error) {
@@ -154,11 +148,7 @@ func builtinStartsWith(a, b ast.Value) (ast.Value, error) {
 		return nil, err
 	}
 
-	if !strings.HasPrefix(string(s), string(prefix)) {
-		return nil, BuiltinEmpty{}
-	}
-
-	return ast.Boolean(true), nil
+	return ast.Boolean(strings.HasPrefix(string(s), string(prefix))), nil
 }
 
 func builtinEndsWith(a, b ast.Value) (ast.Value, error) {
@@ -172,11 +162,7 @@ func builtinEndsWith(a, b ast.Value) (ast.Value, error) {
 		return nil, err
 	}
 
-	if !strings.HasSuffix(string(s), string(suffix)) {
-		return nil, BuiltinEmpty{}
-	}
-
-	return ast.Boolean(true), nil
+	return ast.Boolean(strings.HasSuffix(string(s), string(suffix))), nil
 }
 
 func builtinLower(a ast.Value) (ast.Value, error) {
@@ -252,7 +238,7 @@ func builtinSprintf(a, b ast.Value) (ast.Value, error) {
 
 	astArr, ok := b.(ast.Array)
 	if !ok {
-		return nil, builtins.NewOperandTypeErr(2, b, ast.ArrayTypeName)
+		return nil, builtins.NewOperandTypeErr(2, b, "array")
 	}
 
 	strArr := []interface{}{}

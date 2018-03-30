@@ -121,7 +121,7 @@ func MustParseTerm(input string) *Term {
 func ParseRuleFromBody(module *Module, body Body) (*Rule, error) {
 
 	if len(body) != 1 {
-		return nil, fmt.Errorf("multiple %vs cannot be used for %v", ExprTypeName, HeadTypeName)
+		return nil, fmt.Errorf("multiple expressions cannot be used for rule head")
 	}
 
 	return ParseRuleFromExpr(module, body[0])
@@ -132,22 +132,25 @@ func ParseRuleFromBody(module *Module, body Body) (*Rule, error) {
 func ParseRuleFromExpr(module *Module, expr *Expr) (*Rule, error) {
 
 	if len(expr.With) > 0 {
-		return nil, fmt.Errorf("%vs using %v cannot be used for %v", ExprTypeName, WithTypeName, HeadTypeName)
+		return nil, fmt.Errorf("expressions using with keyword cannot be used for rule head")
 	}
 
 	if expr.Negated {
-		return nil, fmt.Errorf("negated %v cannot be used for %v", TypeName(expr), RuleTypeName)
+		return nil, fmt.Errorf("negated expressions cannot be used for rule head")
 	}
 
-	if !expr.IsCall() {
-		return ParsePartialSetDocRuleFromTerm(module, expr.Terms.(*Term))
+	if term, ok := expr.Terms.(*Term); ok {
+		switch v := term.Value.(type) {
+		case Ref:
+			return ParsePartialSetDocRuleFromTerm(module, term)
+		default:
+			return nil, fmt.Errorf("%v cannot be used for rule name", TypeName(v))
+		}
 	}
 
-	if !expr.IsEquality() {
-		for _, bi := range Builtins {
-			if expr.Operator().Equal(bi.Ref()) {
-				return nil, fmt.Errorf("%v name conflicts with built-in function", RuleTypeName)
-			}
+	if !expr.IsEquality() && expr.IsCall() {
+		if _, ok := BuiltinMap[expr.Operator().String()]; ok {
+			return nil, fmt.Errorf("rule name conflicts with built-in function")
 		}
 		return ParseRuleFromCallExpr(module, expr.Terms.([]*Term))
 	}
@@ -155,6 +158,11 @@ func ParseRuleFromExpr(module *Module, expr *Expr) (*Rule, error) {
 	lhs, rhs := expr.Operand(0), expr.Operand(1)
 
 	rule, err := ParseCompleteDocRuleFromEqExpr(module, lhs, rhs)
+	if err == nil {
+		return rule, nil
+	}
+
+	rule, err = ParseRuleFromCallEqExpr(module, lhs, rhs)
 	if err == nil {
 		return rule, nil
 	}
@@ -173,7 +181,7 @@ func ParseCompleteDocRuleFromEqExpr(module *Module, lhs, rhs *Term) (*Rule, erro
 	} else if v, ok := lhs.Value.(Var); ok {
 		name = v
 	} else {
-		return nil, fmt.Errorf("%v cannot be used for name of %v", TypeName(lhs.Value), RuleTypeName)
+		return nil, fmt.Errorf("%v cannot be used for rule name", TypeName(lhs.Value))
 	}
 
 	rule := &Rule{
@@ -189,8 +197,6 @@ func ParseCompleteDocRuleFromEqExpr(module *Module, lhs, rhs *Term) (*Rule, erro
 		Module: module,
 	}
 
-	rule.Body[0].Location = rhs.Location
-
 	return rule, nil
 }
 
@@ -200,7 +206,7 @@ func ParsePartialObjectDocRuleFromEqExpr(module *Module, lhs, rhs *Term) (*Rule,
 
 	ref, ok := lhs.Value.(Ref)
 	if !ok || len(ref) != 2 {
-		return nil, fmt.Errorf("%v cannot be used for name of %v", TypeName(lhs.Value), RuleTypeName)
+		return nil, fmt.Errorf("%v cannot be used for rule name", TypeName(lhs.Value))
 	}
 
 	name := ref[0].Value.(Var)
@@ -220,7 +226,6 @@ func ParsePartialObjectDocRuleFromEqExpr(module *Module, lhs, rhs *Term) (*Rule,
 		Module: module,
 	}
 
-	rule.Body[0].Location = rhs.Location
 	return rule, nil
 }
 
@@ -230,11 +235,11 @@ func ParsePartialSetDocRuleFromTerm(module *Module, term *Term) (*Rule, error) {
 
 	ref, ok := term.Value.(Ref)
 	if !ok {
-		return nil, fmt.Errorf("%vs cannot be used for %v", TypeName(term.Value), HeadTypeName)
+		return nil, fmt.Errorf("%vs cannot be used for rule head", TypeName(term.Value))
 	}
 
 	if len(ref) != 2 {
-		return nil, fmt.Errorf("%v cannot be used for %v", RefTypeName, RuleTypeName)
+		return nil, fmt.Errorf("refs cannot be used for rule")
 	}
 
 	rule := &Rule{
@@ -253,23 +258,41 @@ func ParsePartialSetDocRuleFromTerm(module *Module, term *Term) (*Rule, error) {
 	return rule, nil
 }
 
+// ParseRuleFromCallEqExpr returns a rule if the term can be interpreted as a
+// function definition (e.g., f(x) = y => f(x) = y { true }).
+func ParseRuleFromCallEqExpr(module *Module, lhs, rhs *Term) (*Rule, error) {
+
+	call, ok := lhs.Value.(Call)
+	if !ok {
+		return nil, fmt.Errorf("must be call")
+	}
+
+	rule := &Rule{
+		Location: lhs.Location,
+		Head: &Head{
+			Location: lhs.Location,
+			Name:     call[0].Value.(Ref)[0].Value.(Var),
+			Args:     Args(call[1:]),
+			Value:    rhs,
+		},
+		Body:   NewBody(NewExpr(BooleanTerm(true).SetLocation(rhs.Location).SetLocation(rhs.Location))),
+		Module: module,
+	}
+
+	return rule, nil
+}
+
 // ParseRuleFromCallExpr returns a rule if the terms can be interpreted as a
-// function returning true or some value (e.g., f(x) => f(x) = true { true },
-// f(x) = y => f(x) = y { true }).
+// function returning true or some value (e.g., f(x) => f(x) = true { true }).
 func ParseRuleFromCallExpr(module *Module, terms []*Term) (*Rule, error) {
-	var args Args
-	var value *Term
-	loc := terms[0].Location
 
 	if len(terms) <= 1 {
-		return nil, fmt.Errorf("%ss with %v must take at least one argument", RuleTypeName, ArgsTypeName)
-	} else if len(terms) == 2 {
-		args = Args{terms[1]}
-		value = BooleanTerm(true).SetLocation(loc)
-	} else {
-		args = terms[1 : len(terms)-1]
-		value = terms[len(terms)-1]
+		return nil, fmt.Errorf("rule argument list must take at least one argument")
 	}
+
+	loc := terms[0].Location
+	args := terms[1:]
+	value := BooleanTerm(true).SetLocation(loc)
 
 	rule := &Rule{
 		Location: loc,
@@ -502,7 +525,7 @@ func parseModule(stmts []Statement, comments []*Comment) (*Module, error) {
 	_package, ok := stmts[0].(*Package)
 	if !ok {
 		loc := stmts[0].(Statement).Loc()
-		errs = append(errs, NewError(ParseErr, loc, "expected %v", PackageTypeName))
+		errs = append(errs, NewError(ParseErr, loc, "package expected"))
 	}
 
 	mod := &Module{
@@ -527,7 +550,7 @@ func parseModule(stmts []Statement, comments []*Comment) (*Module, error) {
 				mod.Rules = append(mod.Rules, rule)
 			}
 		case *Package:
-			errs = append(errs, NewError(ParseErr, stmt.Loc(), "unexpected "+PackageTypeName))
+			errs = append(errs, NewError(ParseErr, stmt.Loc(), "unexpected package"))
 		case *Comment: // Ignore comments, they're handled above.
 		default:
 			panic("illegal value") // Indicates grammar is out-of-sync with code.
@@ -597,10 +620,10 @@ func setExprIndices(x interface{}) {
 }
 
 func mangleWildcards(stmts []Statement) {
-
-	mangler := &wildcardMangler{}
-	for _, stmt := range stmts {
-		Walk(mangler, stmt)
+	m := &wildcardMangler{}
+	for i := range stmts {
+		stmt, _ := Transform(m, stmts[i])
+		stmts[i] = stmt.(Statement)
 	}
 }
 
@@ -608,17 +631,15 @@ type wildcardMangler struct {
 	c int
 }
 
-func (vis *wildcardMangler) Visit(x interface{}) Visitor {
-	term, ok := x.(*Term)
-	if !ok {
-		return vis
+func (m *wildcardMangler) Transform(x interface{}) (interface{}, error) {
+	if term, ok := x.(Var); ok {
+		if term.Equal(Wildcard.Value) {
+			name := fmt.Sprintf("%s%d", WildcardPrefix, m.c)
+			m.c++
+			return Var(name), nil
+		}
 	}
-	if term.Equal(Wildcard) {
-		name := fmt.Sprintf("%s%d", WildcardPrefix, vis.c)
-		term.Value = Var(name)
-		vis.c++
-	}
-	return vis
+	return x, nil
 }
 
 func setRuleModule(rule *Rule, module *Module) {
