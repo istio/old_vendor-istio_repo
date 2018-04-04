@@ -82,6 +82,19 @@ func EchoHandler(w http.ResponseWriter, r *http.Request) {
 		log.Debugf("Adding Connection:close / will close socket")
 		w.Header().Set("Connection", "close")
 	}
+	// process header(s) args, must be before size to compose properly
+	for _, hdr := range r.Form["header"] {
+		log.LogVf("Adding requested header %s", hdr)
+		if len(hdr) == 0 {
+			continue
+		}
+		s := strings.SplitN(hdr, ":", 2)
+		if len(s) != 2 {
+			log.Errf("invalid extra header '%s', expecting Key: Value", hdr)
+			continue
+		}
+		w.Header().Add(s[0], s[1])
+	}
 	size := generateSize(r.FormValue("size"))
 	if size >= 0 {
 		log.LogVf("Writing %d size with %d status", size, status)
@@ -302,6 +315,11 @@ func DebugHandler(w http.ResponseWriter, r *http.Request) {
 	if _, err = w.Write(buf.Bytes()); err != nil {
 		log.Errf("Error writing response %v to %v", err, r.RemoteAddr)
 	}
+}
+
+// CacheOn sets the header for indefinite caching.
+func CacheOn(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "max-age=365000000, immutable")
 }
 
 // Serve starts a debug / echo http server on the given port.

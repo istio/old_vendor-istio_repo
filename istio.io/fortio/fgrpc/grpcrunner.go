@@ -21,6 +21,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -35,9 +36,11 @@ import (
 
 const (
 	// DefaultGRPCPort is the Fortio gRPC server default port number.
-	DefaultGRPCPort = "8079"
-	prefixHTTP      = "http://"
-	prefixHTTPS     = "https://"
+	DefaultGRPCPort  = "8079"
+	defaultHTTPPort  = "80"
+	defaultHTTPSPort = "443"
+	prefixHTTP       = "http://"
+	prefixHTTPS      = "https://"
 )
 
 // Dial dials grpc either using insecure or using default tls setup.
@@ -61,23 +64,39 @@ func Dial(serverAddr string, tls bool) (conn *grpc.ClientConn, err error) {
 // Also is the internal type used per thread/goroutine.
 type GRPCRunnerResults struct {
 	periodic.RunnerResults
-	client      grpc_health_v1.HealthClient
-	req         grpc_health_v1.HealthCheckRequest
+	clientH     grpc_health_v1.HealthClient
+	reqH        grpc_health_v1.HealthCheckRequest
+	clientP     PingServerClient
+	reqP        PingMessage
 	RetCodes    HealthResultMap
 	Destination string
+	Streams     int
+	Ping        bool
 }
 
-// Run exercises GRPC health check at the target QPS.
+// Run exercises GRPC health check or ping at the target QPS.
 // To be set as the Function in RunnerOptions.
 func (grpcstate *GRPCRunnerResults) Run(t int) {
 	log.Debugf("Calling in %d", t)
-	res, err := grpcstate.client.Check(context.Background(), &grpcstate.req)
-	log.Debugf("Got %v %v", err, res)
+	var err error
+	var res interface{}
+	status := grpc_health_v1.HealthCheckResponse_SERVING
+	if grpcstate.Ping {
+		res, err = grpcstate.clientP.Ping(context.Background(), &grpcstate.reqP)
+	} else {
+		var r *grpc_health_v1.HealthCheckResponse
+		r, err = grpcstate.clientH.Check(context.Background(), &grpcstate.reqH)
+		if r != nil {
+			status = r.Status
+			res = r
+		}
+	}
+	log.Debugf("For %d (ping=%v) got %v %v", t, grpcstate.Ping, err, res)
 	if err != nil {
-		log.Warnf("Error making health check %v", err)
+		log.Warnf("Error making grpc call: %v", err)
 		grpcstate.RetCodes[-1]++
 	} else {
-		grpcstate.RetCodes[res.Status]++
+		grpcstate.RetCodes[status]++
 	}
 }
 
@@ -86,42 +105,88 @@ func (grpcstate *GRPCRunnerResults) Run(t int) {
 type GRPCRunnerOptions struct {
 	periodic.RunnerOptions
 	Destination        string
-	Service            string
-	Profiler           string // file to save profiles to. defaults to no profiling
-	Secure             bool   // use tls transport
-	AllowInitialErrors bool   // whether initial errors don't cause an abort
+	Service            string        // Service to be checked when using grpc health check
+	Profiler           string        // file to save profiles to. defaults to no profiling
+	Payload            string        // Payload to be sent for grpc ping service
+	Streams            int           // number of streams. total go routines and data streams will be streams*numthreads.
+	Delay              time.Duration // Delay to be sent when using grpc ping service
+	Secure             bool          // use tls transport
+	AllowInitialErrors bool          // whether initial errors don't cause an abort
+	UsePing            bool          // use our own Ping proto for grpc load instead of standard health check one.
 }
 
 // RunGRPCTest runs an http test and returns the aggregated stats.
 func RunGRPCTest(o *GRPCRunnerOptions) (*GRPCRunnerResults, error) {
-	log.Infof("Starting grpc test for %s with %d threads at %.1f qps", o.Destination, o.NumThreads, o.QPS)
+	if o.Streams < 1 {
+		o.Streams = 1
+	}
+	if o.NumThreads < 1 {
+		// sort of todo, this redoing some of periodic normalize (but we can't use normalize which does too much)
+		o.NumThreads = periodic.DefaultRunnerOptions.NumThreads
+	}
+	if o.UsePing {
+		o.RunType = "GRPC Ping"
+		if o.Delay > 0 {
+			o.RunType += fmt.Sprintf(" Delay=%v", o.Delay)
+		}
+	} else {
+		o.RunType = "GRPC Health"
+	}
+	pll := len(o.Payload)
+	if pll > 0 {
+		o.RunType += fmt.Sprintf(" PayloadLength=%d", pll)
+	}
+	log.Infof("Starting %s test for %s with %d*%d threads at %.1f qps", o.RunType, o.Destination, o.Streams, o.NumThreads, o.QPS)
+	o.NumThreads *= o.Streams
 	r := periodic.NewPeriodicRunner(&o.RunnerOptions)
 	defer r.Options().Abort()
-	numThreads := r.Options().NumThreads
+	numThreads := r.Options().NumThreads // may change
 	total := GRPCRunnerResults{
 		RetCodes:    make(HealthResultMap),
 		Destination: o.Destination,
+		Streams:     o.Streams,
+		Ping:        o.UsePing,
 	}
 	grpcstate := make([]GRPCRunnerResults, numThreads)
 	out := r.Options().Out // Important as the default value is set from nil to stdout inside NewPeriodicRunner
+	var conn *grpc.ClientConn
+	var err error
+	ts := time.Now().UnixNano()
 	for i := 0; i < numThreads; i++ {
 		r.Options().Runners[i] = &grpcstate[i]
-		conn, err := Dial(o.Destination, o.Secure)
-		if err != nil {
-			log.Errf("Error in grpc dial for %s %v", o.Destination, err)
-			return nil, err
-		}
-		grpcstate[i].client = grpc_health_v1.NewHealthClient(conn)
-		if grpcstate[i].client == nil {
-			return nil, fmt.Errorf("unable to create client %d for %s", i, o.Destination)
-		}
-		grpcstate[i].req = grpc_health_v1.HealthCheckRequest{Service: o.Service}
-		if o.Exactly <= 0 {
-			_, err = grpcstate[i].client.Check(context.Background(), &grpcstate[i].req)
-			if !o.AllowInitialErrors && err != nil {
-				log.Errf("Error in first grpc health check call for %s %v", o.Destination, err)
+		if (i % o.Streams) == 0 {
+			conn, err = Dial(o.Destination, o.Secure)
+			if err != nil {
+				log.Errf("Error in grpc dial for %s %v", o.Destination, err)
 				return nil, err
 			}
+		} else {
+			log.Debugf("Reusing previous client connection for %d", i)
+		}
+		grpcstate[i].Ping = o.UsePing
+		var err error
+		if o.UsePing {
+			grpcstate[i].clientP = NewPingServerClient(conn)
+			if grpcstate[i].clientP == nil {
+				return nil, fmt.Errorf("unable to create ping client %d for %s", i, o.Destination)
+			}
+			grpcstate[i].reqP = PingMessage{Payload: o.Payload, DelayNanos: o.Delay.Nanoseconds(), Seq: int64(i), Ts: ts}
+			if o.Exactly <= 0 {
+				_, err = grpcstate[i].clientP.Ping(context.Background(), &grpcstate[i].reqP)
+			}
+		} else {
+			grpcstate[i].clientH = grpc_health_v1.NewHealthClient(conn)
+			if grpcstate[i].clientH == nil {
+				return nil, fmt.Errorf("unable to create health client %d for %s", i, o.Destination)
+			}
+			grpcstate[i].reqH = grpc_health_v1.HealthCheckRequest{Service: o.Service}
+			if o.Exactly <= 0 {
+				_, err = grpcstate[i].clientH.Check(context.Background(), &grpcstate[i].reqH)
+			}
+		}
+		if !o.AllowInitialErrors && err != nil {
+			log.Errf("Error in first grpc call (ping = %v) for %s: %v", o.UsePing, o.Destination, err)
+			return nil, err
 		}
 		// Setup the stats for each 'thread'
 		grpcstate[i].RetCodes = make(HealthResultMap)
@@ -163,37 +228,57 @@ func RunGRPCTest(o *GRPCRunnerOptions) (*GRPCRunnerResults, error) {
 	}
 	// Cleanup state:
 	r.Options().ReleaseRunners()
+	which := "Health"
+	if o.UsePing {
+		which = "Ping"
+	}
 	for _, k := range keys {
-		fmt.Fprintf(out, "Health %s : %d\n", k.String(), total.RetCodes[k])
+		fmt.Fprintf(out, "%s %s : %d\n", which, k.String(), total.RetCodes[k])
 	}
 	return &total, nil
 }
 
-// grpcDestination parses dest and returns dest:port based on dest type
-// being a hostname, IP address or hostname/ip:port pair.
+// grpcDestination parses dest and returns dest:port based on dest being
+// a hostname, IP address, hostname:port, or ip:port. The original dest is
+// returned if dest is an invalid hostname or invalid IP address. An http/https
+// prefix is removed from dest if one exists and the port number is set to
+// DefaultHTTPPort for http, DefaultHTTPSPort for https, or DefaultGRPCPort
+// if http, https, or :port is not specified in dest.
 // TODO: change/fix this (NormalizePort and more)
-func grpcDestination(dest string) string {
-	// strip any unintentional http/https scheme prefixes from destination
-	if strings.HasPrefix(dest, prefixHTTP) {
-		dest = strings.Replace(dest, prefixHTTP, "", 1)
-		log.Infof("stripping http scheme. grpc destination: %v", dest)
-	} else if strings.HasPrefix(dest, prefixHTTPS) {
-		dest = strings.Replace(dest, prefixHTTPS, "", 1)
-		log.Infof("stripping https scheme. grpc destination: %v", dest)
+func grpcDestination(dest string) (parsedDest string) {
+	var port string
+	// strip any unintentional http/https scheme prefixes from dest
+	// and set the port number.
+	switch {
+	case strings.HasPrefix(dest, prefixHTTP):
+		parsedDest = strings.Replace(dest, prefixHTTP, "", 1)
+		port = defaultHTTPPort
+		log.Infof("stripping http scheme. grpc destination: %v: grpc port: %s",
+			parsedDest, port)
+	case strings.HasPrefix(dest, prefixHTTPS):
+		parsedDest = strings.Replace(dest, prefixHTTPS, "", 1)
+		port = defaultHTTPSPort
+		log.Infof("stripping https scheme. grpc destination: %v. grpc port: %s",
+			parsedDest, port)
+	default:
+		parsedDest = dest
+		port = DefaultGRPCPort
 	}
-
-	if _, _, err := net.SplitHostPort(dest); err == nil {
-		return dest
+	if _, _, err := net.SplitHostPort(parsedDest); err == nil {
+		return parsedDest
 	}
-	if ip := net.ParseIP(dest); ip != nil {
+	if ip := net.ParseIP(parsedDest); ip != nil {
 		switch {
 		case ip.To4() != nil:
-			return ip.String() + fnet.NormalizePort(DefaultGRPCPort)
+			parsedDest = ip.String() + fnet.NormalizePort(port)
+			return parsedDest
 		case ip.To16() != nil:
-			return "[" + ip.String() + "]" + fnet.NormalizePort(DefaultGRPCPort)
+			parsedDest = "[" + ip.String() + "]" + fnet.NormalizePort(port)
+			return parsedDest
 		}
-
 	}
-	// dest must be in the form of hostname
-	return dest + fnet.NormalizePort(DefaultGRPCPort)
+	// parsedDest is in the form of a domain name,
+	// append ":port" and return.
+	parsedDest += fnet.NormalizePort(port)
+	return parsedDest
 }

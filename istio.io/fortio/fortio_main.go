@@ -77,7 +77,7 @@ var (
 	resolutionFlag    = flag.Float64("r", defaults.Resolution, "Resolution of the histogram lowest buckets in seconds")
 	goMaxProcsFlag    = flag.Int("gomaxprocs", 0, "Setting for runtime.GOMAXPROCS, <1 doesn't change the default")
 	profileFlag       = flag.String("profile", "", "write .cpu and .mem profiles to file")
-	grpcFlag          = flag.Bool("grpc", false, "Use GRPC (health check) for load testing")
+	grpcFlag          = flag.Bool("grpc", false, "Use GRPC (health check by default, add -ping for ping) for load testing")
 	grpcSecureFlag    = flag.Bool("grpc-secure", false, "Use secure transport (tls) for GRPC")
 	httpsInsecureFlag = flag.Bool("https-insecure", false, "Long form of the -k flag")
 	echoPortFlag      = flag.String("http-port", "8080", "http echo server port. Can be in the form of host:port, ip:port or port.")
@@ -99,6 +99,7 @@ var (
 	defaultDataDir = "."
 
 	allowInitialErrorsFlag = flag.Bool("allow-initial-errors", false, "Allow and don't abort on initial warmup errors")
+	abortOnFlag            = flag.Int("abort-on", 0, "Http code that if encountered aborts the run. e.g. 503 or -1 for socket errors.")
 	autoSaveFlag           = flag.Bool("a", false, "Automatically save JSON result with filename based on labels & timestamp")
 	redirectFlag           = flag.String("redirect-port", "8081", "Redirect all incoming traffic to https URL"+
 		" (need ingress to work properly). Can be in the form of host:port, ip:port, port or \"disabled\" to disable the feature.")
@@ -113,10 +114,16 @@ var (
 
 	// GRPC related flags
 	// To get most debugging/tracing:
-	// GODEBUG="http2debug=2" GRPC_GO_LOG_VERBOSITY_LEVEL=99 GRPC_GO_LOG_SEVERITY_LEVEL=info grpcping -loglevel debug
-	doHealthFlag  = flag.Bool("health", false, "grpc ping client mode: use health instead of ping")
-	healthSvcFlag = flag.String("healthservice", "", "which service string to pass to health check")
-	payloadFlag   = flag.String("payload", "", "Payload string to send along")
+	// GODEBUG="http2debug=2" GRPC_GO_LOG_VERBOSITY_LEVEL=99 GRPC_GO_LOG_SEVERITY_LEVEL=info fortio grpcping -loglevel debug
+	doHealthFlag   = flag.Bool("health", false, "grpc ping client mode: use health instead of ping")
+	doPingLoadFlag = flag.Bool("ping", false, "grpc load test: use ping instead of health")
+	healthSvcFlag  = flag.String("healthservice", "", "which service string to pass to health check")
+	payloadFlag    = flag.String("payload", "", "Payload string to send along")
+	pingDelayFlag  = flag.Duration("grpc-ping-delay", 0, "grpc ping delay in response")
+	streamsFlag    = flag.Int("s", 1, "Number of streams per grpc connection")
+
+	maxStreamsFlag = flag.Uint("grpc-max-streams", 0,
+		"MaxConcurrentStreams for the grpc server. Default (0) is to leave the option unset.")
 )
 
 func main() {
@@ -162,7 +169,7 @@ func main() {
 		}
 	case "server":
 		isServer = true
-		fgrpc.PingServer(*grpcPortFlag, fgrpc.DefaultHealthServiceName)
+		fgrpc.PingServer(*grpcPortFlag, fgrpc.DefaultHealthServiceName, uint32(*maxStreamsFlag))
 		if *redirectFlag != "disabled" {
 			fhttp.RedirectToHTTPS(*redirectFlag)
 		}
@@ -251,7 +258,11 @@ func fortioLoad(justCurl bool, percList []float64) {
 			Destination:        url,
 			Secure:             *grpcSecureFlag,
 			Service:            *healthSvcFlag,
+			Streams:            *streamsFlag,
 			AllowInitialErrors: *allowInitialErrorsFlag,
+			Payload:            *payloadFlag,
+			Delay:              *pingDelayFlag,
+			UsePing:            *doPingLoadFlag,
 		}
 		res, err = fgrpc.RunGRPCTest(&o)
 	} else {
@@ -260,6 +271,7 @@ func fortioLoad(justCurl bool, percList []float64) {
 			RunnerOptions:      ro,
 			Profiler:           *profileFlag,
 			AllowInitialErrors: *allowInitialErrorsFlag,
+			AbortOn:            *abortOnFlag,
 		}
 		res, err = fhttp.RunHTTPTest(&o)
 	}
@@ -325,7 +337,7 @@ func grpcClient() {
 	if *doHealthFlag {
 		_, err = fgrpc.GrpcHealthCheck(host, tls, *healthSvcFlag, count)
 	} else {
-		_, err = fgrpc.PingClientCall(host, tls, count, *payloadFlag)
+		_, err = fgrpc.PingClientCall(host, tls, count, *payloadFlag, *pingDelayFlag)
 	}
 	if err != nil {
 		// already logged
