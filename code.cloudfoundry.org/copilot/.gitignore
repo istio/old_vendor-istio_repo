@@ -1,0 +1,7 @@
+vendor
+manual_testing
+.idea
+
+sdk/ruby/*.gem
+.DS_Store
+sdk/ruby/.rspec_status

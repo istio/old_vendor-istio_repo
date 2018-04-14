@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+import "common.proto";
+
+package api;
+
+service IstioCopilot {
+  rpc Health(HealthRequest) returns (HealthResponse) {}
+  rpc Routes(RoutesRequest) returns (RoutesResponse) {}
+}
+
+message RoutesRequest {
+}
+
+message RoutesResponse {
+  // key is hostname
+  map<string, BackendSet> backends = 1;
+}
+
+message BackendSet {
+  repeated Backend backends = 1;
+}
+
+message Backend {
+  string address = 1;
+  uint32 port = 2;
+}

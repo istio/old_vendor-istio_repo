@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+import "common.proto";
+
+package api;
+
+message ListCfRoutesRequest {}
+
+message ListCfRoutesResponse {
+  // key is route guid
+  // value is host
+  map<string, string> routes = 1;
+}
+
+message ListCfRouteMappingsRequest {}
+
+message ListCfRouteMappingsResponse {
+  // key is '<route guid>-<capi process guid>'
+  // value is a route_mapping
+  map<string, RouteMapping> route_mappings = 1;
+}
+
+message ListCapiDiegoProcessAssociationsRequest {}
+
+// this is only for ListCapiDiegoProcessAssociationsResponse,
+// since protobuf does not support list values in maps.
+// it's gross. try not to use it.
+message DiegoProcessGuids {
+  repeated string diego_process_guids = 1;
+}
+message ListCapiDiegoProcessAssociationsResponse {
+  // key is capi process guid
+  // value is a list of diego process guids
+  map<string, DiegoProcessGuids> capi_diego_process_associations = 1;
+}
+
+message Route {
+  string guid = 1;
+  string host = 2;
+}
+
+message UpsertRouteRequest {
+  Route route = 1;
+}
+
+message UpsertRouteResponse {}
+
+message DeleteRouteRequest {
+  string guid = 1;
+}
+
+message DeleteRouteResponse {}
+
+message RouteMapping {
+  string capi_process_guid = 1;
+  string route_guid = 2;
+}
+
+message MapRouteRequest {
+  RouteMapping route_mapping = 1;
+}
+
+message MapRouteResponse {}
+
+message UnmapRouteRequest {
+  RouteMapping route_mapping = 1;
+}
+
+message UnmapRouteResponse {}
+
+message CapiDiegoProcessAssociation {
+  string capi_process_guid = 1;
+  repeated string diego_process_guids = 2;
+}
+
+message UpsertCapiDiegoProcessAssociationRequest {
+  CapiDiegoProcessAssociation capi_diego_process_association = 1;
+}
+
+message UpsertCapiDiegoProcessAssociationResponse {}
+
+message DeleteCapiDiegoProcessAssociationRequest {
+  string capi_process_guid = 1;
+}
+
+message DeleteCapiDiegoProcessAssociationResponse {}
+
+service CloudControllerCopilot {
+  rpc ListCfRoutes(ListCfRoutesRequest) returns (ListCfRoutesResponse) {}
+  rpc ListCfRouteMappings(ListCfRouteMappingsRequest) returns (ListCfRouteMappingsResponse) {}
+  rpc ListCapiDiegoProcessAssociations(ListCapiDiegoProcessAssociationsRequest) returns (ListCapiDiegoProcessAssociationsResponse) {}
+
+  rpc UpsertRoute(UpsertRouteRequest) returns (UpsertRouteResponse) {}
+  rpc DeleteRoute (DeleteRouteRequest) returns (DeleteRouteResponse) {}
+
+  rpc MapRoute (MapRouteRequest) returns (MapRouteResponse) {}
+  rpc UnmapRoute (UnmapRouteRequest) returns (UnmapRouteResponse) {}
+
+  rpc UpsertCapiDiegoProcessAssociation(UpsertCapiDiegoProcessAssociationRequest) returns (UpsertCapiDiegoProcessAssociationResponse) {}
+  rpc DeleteCapiDiegoProcessAssociation(DeleteCapiDiegoProcessAssociationRequest) returns (DeleteCapiDiegoProcessAssociationResponse) {}
+
+  rpc Health(HealthRequest) returns (HealthResponse) {}
+}
