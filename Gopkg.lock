@@ -9,6 +9,7 @@
     "logging",
     "logging/apiv2",
     "logging/internal",
+    "logging/logadmin",
     "monitoring/apiv3"
   ]
   revision = "4b98a6370e36d7a85192e7bad08a4ebd82eac2a8"
@@ -269,6 +270,12 @@
     "pkg/util"
   ]
   revision = "9fdf4bd79736a87c78b3d48b7baa84ea24be1c1a"
+
+[[projects]]
+  name = "github.com/evanphx/json-patch"
+  packages = ["."]
+  revision = "afac545df32f2287a079e2dfb7ba2745a643747e"
+  version = "v3.0.0"
 
 [[projects]]
   name = "github.com/fluent/fluent-logger-golang"
@@ -1130,6 +1137,8 @@
     "googleapis/api/label",
     "googleapis/api/metric",
     "googleapis/api/monitoredres",
+    "googleapis/appengine/logging/v1",
+    "googleapis/cloud/audit",
     "googleapis/logging/type",
     "googleapis/logging/v2",
     "googleapis/monitoring/v3",
@@ -1368,6 +1377,7 @@
     "discovery",
     "discovery/fake",
     "dynamic",
+    "dynamic/fake",
     "kubernetes",
     "kubernetes/fake",
     "kubernetes/scheme",
@@ -1527,6 +1537,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dc1b27e47e5d1e7ff9fc563f6020e434eda89384e7ece73d7984e889e9fc3c41"
+  inputs-digest = "c0d5b45c8f58cb707e69b87002ed9962eecc6a26e93e6ba8c3a13e10d1c7cd06"
   solver-name = "gps-cdcl"
   solver-version = 1
