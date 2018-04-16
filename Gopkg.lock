@@ -266,12 +266,15 @@
     "envoy/config/filter/network/tcp_proxy/v2",
     "envoy/service/discovery/v2",
     "envoy/type",
-    "pkg/cache",
-    "pkg/log",
-    "pkg/server",
     "pkg/util"
   ]
   revision = "9fdf4bd79736a87c78b3d48b7baa84ea24be1c1a"
+
+[[projects]]
+  name = "github.com/evanphx/json-patch"
+  packages = ["."]
+  revision = "afac545df32f2287a079e2dfb7ba2745a643747e"
+  version = "v3.0.0"
 
 [[projects]]
   name = "github.com/fluent/fluent-logger-golang"
@@ -1224,6 +1227,7 @@
   packages = [
     "authentication/v1alpha1",
     "broker/dev",
+    "envoy/config/filter/http/authn/v2alpha1",
     "mesh/v1alpha1",
     "mixer/adapter/model/v1beta1",
     "mixer/v1",
@@ -1371,6 +1375,7 @@
     "discovery",
     "discovery/fake",
     "dynamic",
+    "dynamic/fake",
     "kubernetes",
     "kubernetes/fake",
     "kubernetes/scheme",
@@ -1529,6 +1534,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "dba178a4ee9836780595fe9d6217919106f76d1317ecd78de3bab126c5e65d7b"
+  inputs-digest = "6cad8ed9d4298d65597b3aeee13396f09f4a44781d58ec5ca197f2816348bd14"
   solver-name = "gps-cdcl"
   solver-version = 1
